@@ -57,8 +57,8 @@
 - [x] T011 [P] Contract test for balances.yaml in backend/tests/contract/balances.test.ts  (test added; currently failing as required)
 - [x] T012 [P] Contract test for activity.yaml in backend/tests/contract/activity.test.ts  (test added; currently failing as required)
 - [x] T013 [P] Integration test for admin login flow in backend/tests/integration/admin-auth.test.ts
-- [ ] T014 [P] Integration test for user management in backend/tests/integration/user-management.test.ts
-- [ ] T015 [P] Integration test for group management in backend/tests/integration/group-management.test.ts
+- [x] T014 [P] Integration test for user management in backend/tests/integration/user-management.test.ts
+- [x] T015 [P] Integration test for group management in backend/tests/integration/group-management.test.ts
 - [ ] T016 [P] Integration test for expense creation and splitting in backend/tests/integration/expense-management.test.ts
 - [ ] T017 [P] Integration test for balance calculation in backend/tests/integration/balance-calculation.test.ts
 - [ ] T018 [P] Integration test for activity logging in backend/tests/integration/activity-logging.test.ts
