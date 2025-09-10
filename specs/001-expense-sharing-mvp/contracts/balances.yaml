@@ -1,0 +1,166 @@
+openapi: 3.0.0
+info:
+  title: Balances API
+  description: Balance calculation endpoints
+  version: 1.0.0
+
+paths:
+  /api/groups/{id}/balances:
+    get:
+      summary: Get group balances
+      description: Get balance information for all users in a group
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupBalance'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+        '404':
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Group not found"
+
+  /api/users/{id}/balance:
+    get:
+      summary: Get user's overall balance
+      description: Get overall balance across all groups for a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBalance'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User not found"
+
+components:
+  schemas:
+    GroupBalance:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        user_name:
+          type: string
+          example: "John Doe"
+        balance:
+          type: number
+          format: decimal
+          example: 50.00
+        owes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtRelationship'
+        owed_by:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtRelationship'
+
+    UserBalance:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        user_name:
+          type: string
+          example: "John Doe"
+        overall_balance:
+          type: number
+          format: decimal
+          example: 25.00
+        group_balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupBalanceSummary'
+
+    GroupBalanceSummary:
+      type: object
+      properties:
+        group_id:
+          type: integer
+          example: 1
+        group_name:
+          type: string
+          example: "Vacation Trip"
+        balance:
+          type: number
+          format: decimal
+          example: 50.00
+
+    DebtRelationship:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          example: 2
+        user_name:
+          type: string
+          example: "Jane Smith"
+        amount:
+          type: number
+          format: decimal
+          example: 25.00
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
