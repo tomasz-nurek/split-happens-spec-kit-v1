@@ -68,7 +68,7 @@
 ### Backend Models
 - [x] T019 [P] User model in backend/src/models/User.ts
 - [x] T020 [P] Group model in backend/src/models/Group.ts
-- [ ] T021 [P] GroupMembership model in backend/src/models/GroupMembership.ts
+- [x] T021 [P] GroupMembership model in backend/src/models/GroupMembership.ts
 - [ ] T022 [P] Expense model in backend/src/models/Expense.ts
 - [ ] T023 [P] ExpenseSplit model in backend/src/models/ExpenseSplit.ts
 - [ ] T024 [P] ActivityLog model in backend/src/models/ActivityLog.ts
