@@ -50,7 +50,7 @@
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T007 [P] Contract test for auth.yaml in backend/tests/contract/auth.test.ts
+- [x] T007 [P] Contract test for auth.yaml in backend/tests/contract/auth.test.ts  (test added; currently failing as required)
 - [ ] T008 [P] Contract test for users.yaml in backend/tests/contract/users.test.ts
 - [ ] T009 [P] Contract test for groups.yaml in backend/tests/contract/groups.test.ts
 - [ ] T010 [P] Contract test for expenses.yaml in backend/tests/contract/expenses.test.ts
