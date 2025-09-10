@@ -72,7 +72,7 @@ update_agent_file() {
         elif [[ "$NEW_LANG" == *"Rust"* ]]; then
             COMMANDS="cargo test && cargo clippy"
         elif [[ "$NEW_LANG" == *"JavaScript"* ]] || [[ "$NEW_LANG" == *"TypeScript"* ]]; then
-            COMMANDS="npm test && npm run lint"
+            COMMANDS="pnpm test && pnpm run lint"
         else
             COMMANDS="# Add commands for $NEW_LANG"
         fi
@@ -142,8 +142,8 @@ if "$NEW_LANG" and f"# {NEW_LANG}" not in content:
             new_commands += "\ncd src && pytest && ruff check ."
         elif "Rust" in "$NEW_LANG":
             new_commands += "\ncargo test && cargo clippy"
-        elif "JavaScript" in "$NEW_LANG" or "TypeScript" in "$NEW_LANG":
-            new_commands += "\nnpm test && npm run lint"
+        elif "JavaScript" in tech or "TypeScript" in tech:
+            new_commands += "\npnpm test && pnpm run lint"
         
         if "```bash" in content:
             content = re.sub(r'(## Commands\n\`\`\`bash\n).*?(\n\`\`\`)', 
