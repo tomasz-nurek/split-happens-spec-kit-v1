@@ -53,7 +53,7 @@
 - [x] T007 [P] Contract test for auth.yaml in backend/tests/contract/auth.test.ts  (test added; currently failing as required)
 - [x] T008 [P] Contract test for users.yaml in backend/tests/contract/users.test.ts  (test added; currently failing as required)
 - [x] T009 [P] Contract test for groups.yaml in backend/tests/contract/groups.test.ts  (test added; currently failing as required)
-- [ ] T010 [P] Contract test for expenses.yaml in backend/tests/contract/expenses.test.ts
+- [x] T010 [P] Contract test for expenses.yaml in backend/tests/contract/expenses.test.ts  (test added; currently failing as required)
 - [ ] T011 [P] Contract test for balances.yaml in backend/tests/contract/balances.test.ts
 - [ ] T012 [P] Contract test for activity.yaml in backend/tests/contract/activity.test.ts
 - [ ] T013 [P] Integration test for admin login flow in backend/tests/integration/admin-auth.test.ts
