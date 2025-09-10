@@ -159,7 +159,7 @@ components:
           format: decimal
           example: 25.00
 
-  securitySchemes:
+  securitySchemes:g
     bearerAuth:
       type: http
       scheme: bearer
