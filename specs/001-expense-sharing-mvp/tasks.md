@@ -70,8 +70,8 @@
 - [x] T020 [P] Group model in backend/src/models/Group.ts
 - [x] T021 [P] GroupMembership model in backend/src/models/GroupMembership.ts
 - [x] T022 [P] Expense model in backend/src/models/Expense.ts
-- [ ] T023 [P] ExpenseSplit model in backend/src/models/ExpenseSplit.ts
-- [ ] T024 [P] ActivityLog model in backend/src/models/ActivityLog.ts
+- [x] T023 [P] ExpenseSplit model in backend/src/models/ExpenseSplit.ts
+- [x] T024 [P] ActivityLog model in backend/src/models/ActivityLog.ts
 
 ### Backend Services
 - [ ] T025 UserService for CRUD operations in backend/src/services/UserService.ts
