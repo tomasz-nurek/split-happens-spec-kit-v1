@@ -3,7 +3,7 @@
 ## Prerequisites
 
 1. Node.js v18+ installed
-2. npm or yarn package manager
+2. pnpm package manager
 3. SQLite3 installed
 4. Angular CLI v20+ installed
 
@@ -18,7 +18,7 @@
 
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Create a `.env` file with admin credentials:
@@ -30,12 +30,12 @@
 
 4. Initialize the database:
    ```bash
-   npm run migrate
+   pnpm run migrate
    ```
 
 5. Start the backend server:
    ```bash
-   npm run start
+   pnpm run start
    ```
 
 The backend API will be available at `http://localhost:3000`
@@ -49,12 +49,12 @@ The backend API will be available at `http://localhost:3000`
 
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Start the development server:
    ```bash
-   npm run start
+   pnpm run start
    ```
 
 The frontend application will be available at `http://localhost:4200`
