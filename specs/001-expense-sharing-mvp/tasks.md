@@ -51,7 +51,7 @@
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 - [x] T007 [P] Contract test for auth.yaml in backend/tests/contract/auth.test.ts  (test added; currently failing as required)
-- [ ] T008 [P] Contract test for users.yaml in backend/tests/contract/users.test.ts
+- [x] T008 [P] Contract test for users.yaml in backend/tests/contract/users.test.ts  (test added; currently failing as required)
 - [ ] T009 [P] Contract test for groups.yaml in backend/tests/contract/groups.test.ts
 - [ ] T010 [P] Contract test for expenses.yaml in backend/tests/contract/expenses.test.ts
 - [ ] T011 [P] Contract test for balances.yaml in backend/tests/contract/balances.test.ts
