@@ -74,7 +74,7 @@
 - [x] T024 [P] ActivityLog model in backend/src/models/ActivityLog.ts
 
 ### Backend Services
-- [ ] T025 UserService for CRUD operations in backend/src/services/UserService.ts
+- [x] T025 UserService for CRUD operations in backend/src/services/UserService.ts
 - [ ] T026 GroupService for CRUD operations in backend/src/services/GroupService.ts
 - [ ] T027 ExpenseService for CRUD operations and split calculation in backend/src/services/ExpenseService.ts
 - [ ] T028 BalanceService for balance calculation algorithms in backend/src/services/BalanceService.ts
