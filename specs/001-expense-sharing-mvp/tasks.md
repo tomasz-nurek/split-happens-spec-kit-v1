@@ -40,28 +40,28 @@
 - **Web app**: `backend/src/`, `frontend/src/`
 
 ## Phase 3.1: Setup
-- [ ] T001 Create project structure per implementation plan (backend/ and frontend/ directories)
-- [ ] T002 Initialize Node.js backend project with Express, TypeScript, and SQLite dependencies
-- [ ] T003 Initialize Angular frontend project with v20 and standalone components
-- [ ] T004 [P] Configure linting and formatting tools (ESLint, Prettier) for both projects
-- [ ] T005 [P] Setup environment variables (.env) for admin credentials and JWT secret
-- [ ] T006 Setup database migration system for SQLite
+- [x] T001 Create project structure per implementation plan (backend/ and frontend/ directories)
+- [x] T002 Initialize Node.js backend project with Express, TypeScript, and SQLite dependencies
+- [x] T003 Initialize Angular frontend project with v20 and standalone components
+- [x] T004 [P] Configure linting and formatting tools (ESLint, Prettier) for both projects
+- [x] T005 [P] Setup environment variables (.env) for admin credentials and JWT secret
+- [x] T006 Setup database migration system for SQLite
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T007 [P] Contract test for auth.yaml in backend/tests/contract/test_auth.py
-- [ ] T008 [P] Contract test for users.yaml in backend/tests/contract/test_users.py
-- [ ] T009 [P] Contract test for groups.yaml in backend/tests/contract/test_groups.py
-- [ ] T010 [P] Contract test for expenses.yaml in backend/tests/contract/test_expenses.py
-- [ ] T011 [P] Contract test for balances.yaml in backend/tests/contract/test_balances.py
-- [ ] T012 [P] Contract test for activity.yaml in backend/tests/contract/test_activity.py
-- [ ] T013 [P] Integration test for admin login flow in backend/tests/integration/test_admin_auth.py
-- [ ] T014 [P] Integration test for user management in backend/tests/integration/test_user_management.py
-- [ ] T015 [P] Integration test for group management in backend/tests/integration/test_group_management.py
-- [ ] T016 [P] Integration test for expense creation and splitting in backend/tests/integration/test_expense_management.py
-- [ ] T017 [P] Integration test for balance calculation in backend/tests/integration/test_balance_calculation.py
-- [ ] T018 [P] Integration test for activity logging in backend/tests/integration/test_activity_logging.py
+- [ ] T007 [P] Contract test for auth.yaml in backend/tests/contract/auth.test.ts
+- [ ] T008 [P] Contract test for users.yaml in backend/tests/contract/users.test.ts
+- [ ] T009 [P] Contract test for groups.yaml in backend/tests/contract/groups.test.ts
+- [ ] T010 [P] Contract test for expenses.yaml in backend/tests/contract/expenses.test.ts
+- [ ] T011 [P] Contract test for balances.yaml in backend/tests/contract/balances.test.ts
+- [ ] T012 [P] Contract test for activity.yaml in backend/tests/contract/activity.test.ts
+- [ ] T013 [P] Integration test for admin login flow in backend/tests/integration/admin-auth.test.ts
+- [ ] T014 [P] Integration test for user management in backend/tests/integration/user-management.test.ts
+- [ ] T015 [P] Integration test for group management in backend/tests/integration/group-management.test.ts
+- [ ] T016 [P] Integration test for expense creation and splitting in backend/tests/integration/expense-management.test.ts
+- [ ] T017 [P] Integration test for balance calculation in backend/tests/integration/balance-calculation.test.ts
+- [ ] T018 [P] Integration test for activity logging in backend/tests/integration/activity-logging.test.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
@@ -124,8 +124,8 @@
 - [ ] T060 Setup HTTP interceptor for auth token in Angular frontend
 
 ## Phase 3.6: Polish
-- [ ] T061 [P] Unit tests for validation rules in backend/tests/unit/test_validation.py
-- [ ] T062 [P] Unit tests for balance calculation algorithms in backend/tests/unit/test_balance.py
+- [ ] T061 [P] Unit tests for validation rules in backend/tests/unit/validation.test.ts
+- [ ] T062 [P] Unit tests for balance calculation algorithms in backend/tests/unit/balance.test.ts
 - [ ] T063 Performance tests (<500ms response time)
 - [ ] T064 [P] Update API documentation based on contracts
 - [ ] T065 Run manual testing scenarios from quickstart.md
@@ -143,12 +143,12 @@
 ## Parallel Example
 ```
 # Launch T007-T012 together (contract tests):
-Task: "Contract test for auth.yaml in backend/tests/contract/test_auth.py"
-Task: "Contract test for users.yaml in backend/tests/contract/test_users.py"
-Task: "Contract test for groups.yaml in backend/tests/contract/test_groups.py"
-Task: "Contract test for expenses.yaml in backend/tests/contract/test_expenses.py"
-Task: "Contract test for balances.yaml in backend/tests/contract/test_balances.py"
-Task: "Contract test for activity.yaml in backend/tests/contract/test_activity.py"
+Task: "Contract test for auth.yaml in backend/tests/contract/auth.test.ts"
+Task: "Contract test for users.yaml in backend/tests/contract/users.test.ts"
+Task: "Contract test for groups.yaml in backend/tests/contract/groups.test.ts"
+Task: "Contract test for expenses.yaml in backend/tests/contract/expenses.test.ts"
+Task: "Contract test for balances.yaml in backend/tests/contract/balances.test.ts"
+Task: "Contract test for activity.yaml in backend/tests/contract/activity.test.ts"
 
 # Launch T019-T024 together (models):
 Task: "User model in backend/src/models/User.ts"

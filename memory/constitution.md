@@ -4,14 +4,14 @@
 ## Core Principles
 
 ### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
+- Use PNPM instead standard npm please.
 [PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+PNPM provides a more robust solution and saves disk space. 
 
 ### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
+Frontend angular v20 is using zoneless!
 [PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+We'll try to play with newest cutting edge features
 
 ### [PRINCIPLE_3_NAME]
 <!-- Example: III. Test-First (NON-NEGOTIABLE) -->

@@ -200,13 +200,14 @@ UI Components:
 - Activity log view
 
 ## Testing Considerations
-- Manual testing only (no test suite for MVP)
-- Test all CRUD operations for users, groups, and expenses
-- Verify balance calculations are accurate
-- Test authentication flow
-- Verify activity logging works correctly
-- Test edge cases like deleting users/groups with associated data
-- Mobile responsiveness testing
+- Backend: Unit and integration tests using Vitest.
+- Frontend: Unit tests using Jasmine and Karma.
+- Test all CRUD operations for users, groups, and expenses.
+- Verify balance calculations are accurate.
+- Test authentication flow.
+- Verify activity logging works correctly.
+- Test edge cases like deleting users/groups with associated data.
+- Mobile responsiveness testing.
 
 ## Success Criteria
 - Deployed and accessible via public URL

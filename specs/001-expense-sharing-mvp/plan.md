@@ -35,7 +35,7 @@ A simple expense-sharing application for personal use, where a single admin mana
 **Language/Version**: Node.js with TypeScript, Angular v20  
 **Primary Dependencies**: Express.js, better-sqlite3, JWT for authentication, Angular Signals  
 **Storage**: SQLite3 database  
-**Testing**: Manual testing only (no test suite for MVP)  
+**Testing**: Backend tests with Vitest, Frontend tests with Jasmine/Karma.  
 **Target Platform**: Web application (responsive for mobile browsers)  
 **Project Type**: web (frontend + backend)  
 **Performance Goals**: Response time < 500ms for all API calls  
@@ -58,11 +58,11 @@ A simple expense-sharing application for personal use, where a single admin mana
 - Library docs: llms.txt format planned? NO
 
 **Testing (NON-NEGOTIABLE)**:
-- RED-GREEN-Refactor cycle enforced? (test MUST fail first) NO - Manual testing only for MVP
-- Git commits show tests before implementation? NO - Manual testing only for MVP
-- Order: Contract→Integration→E2E→Unit strictly followed? NO - Manual testing only for MVP
+- RED-GREEN-Refactor cycle enforced? (test MUST fail first) YES
+- Git commits show tests before implementation? YES
+- Order: Contract→Integration→E2E→Unit strictly followed? YES
 - Real dependencies used? (actual DBs, not mocks) YES
-- Integration tests for: new libraries, contract changes, shared schemas? NO - Manual testing only for MVP
+- Integration tests for: new libraries, contract changes, shared schemas? YES
 
 **Observability**:
 - Structured logging included? YES - Activity log table
@@ -191,7 +191,7 @@ frontend/
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | Direct application code instead of libraries | MVP scope requires rapid development | Creating libraries would add unnecessary complexity for a simple MVP |
-| Manual testing instead of automated tests | MVP constraints with solo developer and time limit | Setting up automated testing framework would exceed the 4-day timeline |
+|-----------|------------|-------------------------------------|
 
 ## Progress Tracking
 *This checklist is updated during execution flow*

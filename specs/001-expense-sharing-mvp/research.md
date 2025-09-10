@@ -7,7 +7,7 @@ All technical context items have been resolved based on the feature specificatio
 1. **Language/Version**: Node.js with TypeScript for backend, Angular v20 for frontend
 2. **Primary Dependencies**: Express.js, better-sqlite3, JWT for authentication, Angular Signals
 3. **Storage**: SQLite3 database
-4. **Testing**: Manual testing only as specified in requirements
+4. **Testing**: Backend tests with Vitest, Frontend tests with Jasmine/Karma.
 5. **Target Platform**: Web application with mobile responsiveness
 6. **Performance Goals**: Response time < 500ms for all API calls
 7. **Constraints**: Single admin session, SQLite database file < 100MB
