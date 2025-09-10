@@ -75,7 +75,7 @@
 
 ### Backend Services
 - [x] T025 UserService for CRUD operations in backend/src/services/UserService.ts
-- [ ] T026 GroupService for CRUD operations in backend/src/services/GroupService.ts
+- [x] T026 GroupService for CRUD operations in backend/src/services/GroupService.ts
 - [ ] T027 ExpenseService for CRUD operations and split calculation in backend/src/services/ExpenseService.ts
 - [ ] T028 BalanceService for balance calculation algorithms in backend/src/services/BalanceService.ts
 - [ ] T029 ActivityService for logging actions in backend/src/services/ActivityService.ts
