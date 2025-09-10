@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 
 // Mock routes that will return 404 until implemented
-app.use('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not implemented yet' });
 });
 

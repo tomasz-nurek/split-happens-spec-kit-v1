@@ -59,9 +59,9 @@
 - [x] T013 [P] Integration test for admin login flow in backend/tests/integration/admin-auth.test.ts
 - [x] T014 [P] Integration test for user management in backend/tests/integration/user-management.test.ts
 - [x] T015 [P] Integration test for group management in backend/tests/integration/group-management.test.ts
-- [ ] T016 [P] Integration test for expense creation and splitting in backend/tests/integration/expense-management.test.ts
-- [ ] T017 [P] Integration test for balance calculation in backend/tests/integration/balance-calculation.test.ts
-- [ ] T018 [P] Integration test for activity logging in backend/tests/integration/activity-logging.test.ts
+- [x] T016 [P] Integration test for expense creation and splitting in backend/tests/integration/expense-management.test.ts
+- [x] T017 [P] Integration test for balance calculation in backend/tests/integration/balance-calculation.test.ts
+- [x] T018 [P] Integration test for activity logging in backend/tests/integration/activity-logging.test.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 

@@ -30,7 +30,7 @@
 
 4. Initialize the database:
    ```bash
-   pnpm run migrate
+   pnpm run db:migrate
    ```
 
 5. Start the backend server:
