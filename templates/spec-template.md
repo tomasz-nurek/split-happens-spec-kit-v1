@@ -25,7 +25,7 @@
 8. Return: SUCCESS (spec ready for planning)
 ```
 
----
+----
 
 ## ⚡ Quick Guidelines
 - ✅ Focus on WHAT users need and WHY
@@ -49,8 +49,6 @@ When creating this spec from a user prompt:
    - Error handling behaviors
    - Integration requirements
    - Security/compliance needs
-
----
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,7 +80,7 @@ When creating this spec from a user prompt:
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
----
+----
 
 ## Review & Acceptance Checklist
 *GATE: Automated checks run during main() execution*
@@ -100,7 +98,7 @@ When creating this spec from a user prompt:
 - [ ] Scope is clearly bounded
 - [ ] Dependencies and assumptions identified
 
----
+----
 
 ## Execution Status
 *Updated by main() during processing*
@@ -113,4 +111,4 @@ When creating this spec from a user prompt:
 - [ ] Entities identified
 - [ ] Review checklist passed
 
----
+----
