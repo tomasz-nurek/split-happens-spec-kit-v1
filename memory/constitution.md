@@ -42,6 +42,7 @@ We'll try to play with newest cutting edge features
 
 ## Lessons Learned (Amendments)
 - Keep models as data shapes only for MVP. Validation and behavior live in dedicated utilities/services to avoid coupling and spec drift. (2025-09-10)
+- Stay focused on task scope: Service implementations should provide core CRUD operations and business logic only. Validation, error handling, and edge case management belong in API layer or dedicated middleware. Don't over-engineer beyond the specific task requirements. (2025-09-11)
 
 ## Governance
 <!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
