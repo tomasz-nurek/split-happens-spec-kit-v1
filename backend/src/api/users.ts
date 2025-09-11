@@ -1,43 +1,16 @@
 import { Router, Request, Response } from 'express';
 import { UserService } from '../services/UserService';
-import { AuthService } from '../services/AuthService';
+import { requireAuth } from './auth';
 
 const router = Router();
 const userService = new UserService();
-const authService = new AuthService();
-
-/**
- * Authentication helper function
- */
-const requireAuth = async (req: Request, res: Response): Promise<boolean> => {
-  const authHeader = req.headers.authorization;
-  const token = authService.extractTokenFromHeader(authHeader);
-
-  if (!token) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return false;
-  }
-
-  const isValid = await authService.isTokenValid(token);
-  if (!isValid) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return false;
-  }
-
-  return true;
-};
 
 /**
  * GET /api/users
  * List all users
  */
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    // Check authentication
-    if (!(await requireAuth(req, res))) {
-      return;
-    }
-
     const users = await userService.findAll();
     return res.status(200).json(users);
   } catch (error) {
@@ -52,13 +25,8 @@ router.get('/', async (req: Request, res: Response) => {
  * POST /api/users
  * Create user
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    // Check authentication
-    if (!(await requireAuth(req, res))) {
-      return;
-    }
-
     const { name } = req.body;
 
     // Validate required fields
@@ -84,13 +52,8 @@ router.post('/', async (req: Request, res: Response) => {
  * DELETE /api/users/:id
  * Delete user
  */
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    // Check authentication
-    if (!(await requireAuth(req, res))) {
-      return;
-    }
-
     const { id } = req.params;
     const userId = parseInt(id, 10);
 

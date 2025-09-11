@@ -20,8 +20,11 @@ export class ExpenseService {
   async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseWithSplits> {
     const { amount, description, paidBy, participantIds } = expenseData;
 
-    // Calculate equal split amounts
-    const splitAmount = Number((amount / participantIds.length).toFixed(2));
+    // Calculate equal split amounts with proper rounding to ensure sum equals original amount
+    const participantCount = participantIds.length;
+    const amountInCents = Math.round(amount * 100); // Work in cents to avoid floating point precision issues
+    const baseSplitInCents = Math.floor(amountInCents / participantCount);
+    const remainderCents = amountInCents % participantCount;
 
     return this.db.transaction(async (trx) => {
       // Create the expense
@@ -32,9 +35,14 @@ export class ExpenseService {
         paid_by: paidBy,
       });
 
-      // Create expense splits
+      // Create expense splits - distribute remainder cents to first participants
       const splits: ExpenseSplit[] = [];
-      for (const userId of participantIds) {
+      for (let i = 0; i < participantCount; i++) {
+        const userId = participantIds[i];
+        // Add one extra cent to the first 'remainderCents' participants
+        const splitInCents = baseSplitInCents + (i < remainderCents ? 1 : 0);
+        const splitAmount = splitInCents / 100; // Convert back to dollars
+
         const split: ExpenseSplit = {
           expense_id: expenseId,
           user_id: userId,

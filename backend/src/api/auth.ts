@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService, LoginCredentials } from '../services/AuthService';
 
 const router = Router();
@@ -108,5 +108,27 @@ router.get('/verify', async (req: Request, res: Response) => {
     });
   }
 });
+
+/**
+ * Authentication middleware
+ * Verifies JWT token from Authorization header
+ */
+export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const token = authService.extractTokenFromHeader(authHeader);
+
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  const isValid = await authService.isTokenValid(token);
+  if (!isValid) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  next();
+};
 
 export { router as authRouter };
