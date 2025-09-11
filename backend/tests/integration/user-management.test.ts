@@ -13,10 +13,30 @@ describe('User Management Integration Test (per specs/001-expense-sharing-mvp/qu
   beforeAll(async () => {
     authService = new AuthService();
     
-    // Setup test database
+    // Setup test database with migration lock handling
     db = knex(knexConfig[process.env.NODE_ENV || 'test']);
-    await db.migrate.rollback(undefined, true); // Rollback all migrations first
-    await db.migrate.latest();
+    
+    // Handle migration locks that can occur in concurrent test runs
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await db.migrate.rollback(undefined, true); // Rollback all migrations first
+        await db.migrate.latest();
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        if (error.message && error.message.includes('Migration table is already locked')) {
+          retries--;
+          if (retries > 0) {
+            console.log(`Migration locked, retrying... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before retry
+          } else {
+            throw error; // Re-throw if all retries exhausted
+          }
+        } else {
+          throw error; // Re-throw non-lock errors immediately
+        }
+      }
+    }
   });
 
   afterAll(async () => {
