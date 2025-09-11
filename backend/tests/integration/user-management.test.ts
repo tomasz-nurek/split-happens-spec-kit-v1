@@ -1,24 +1,37 @@
-import { describe, it, beforeAll, expect } from 'vitest';
+import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
-import express from 'express';
+import { app } from '../../src/index';
+import { AuthService } from '../../src/services/AuthService';
+import knex from 'knex';
+
+const knexConfig = require('../../knexfile.js');
 
 describe('User Management Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
-  let app: express.Express;
+  let db: any;
+  let authService: AuthService;
 
-  beforeAll(() => {
-    app = express();
-    app.use(express.json());
-    // No routes implemented yet — tests should fail until endpoints are added.
+  beforeAll(async () => {
+    authService = new AuthService();
+    
+    // Setup test database
+    db = knex(knexConfig[process.env.NODE_ENV || 'test']);
+    await db.migrate.latest();
+  });
+
+  afterAll(async () => {
+    // Clean up test database
+    await db.destroy();
   });
 
   describe('Complete User Management Flow', () => {
     it('should complete full user CRUD flow with admin authentication', async () => {
       // Step 1: Admin login to get token
+      const credentials = authService.getAdminCredentials();
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({
-          username: 'admin',
-          password: 'password123'
+          username: credentials.username,
+          password: credentials.password
         });
 
       expect(loginRes.status).toBe(200);
@@ -130,11 +143,12 @@ describe('User Management Integration Test (per specs/001-expense-sharing-mvp/qu
 
     it('should handle deletion of non-existent user', async () => {
       // First login to get token
+      const credentials = authService.getAdminCredentials();
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({
-          username: 'admin',
-          password: 'password123'
+          username: credentials.username,
+          password: credentials.password
         });
 
       expect(loginRes.status).toBe(200);
@@ -155,11 +169,12 @@ describe('User Management Integration Test (per specs/001-expense-sharing-mvp/qu
 
     it('should validate user creation input', async () => {
       // First login to get token
+      const credentials = authService.getAdminCredentials();
       const loginRes = await request(app)
         .post('/api/auth/login')
         .send({
-          username: 'admin',
-          password: 'password123'
+          username: credentials.username,
+          password: credentials.password
         });
 
       expect(loginRes.status).toBe(200);

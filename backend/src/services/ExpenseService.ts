@@ -15,35 +15,13 @@ export interface CreateExpenseRequest {
 }
 
 export class ExpenseService {
-  private db = knex(knexConfig);
+  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
 
   async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseWithSplits> {
     const { amount, description, paidBy, participantIds } = expenseData;
 
-    // Validate that the group exists
-    const group = await this.db('groups').where({ id: groupId }).first();
-    if (!group) {
-      throw new Error('Group not found');
-    }
-
-    // Validate that the payer is a valid user
-    const payer = await this.db('users').where({ id: paidBy }).first();
-    if (!payer) {
-      throw new Error('Payer user not found');
-    }
-
-    // Validate that all participants are valid users
-    const participants = await this.db('users').whereIn('id', participantIds).select('id');
-    if (participants.length !== participantIds.length) {
-      throw new Error('One or more participant users not found');
-    }
-
     // Calculate equal split amounts
     const splitAmount = Number((amount / participantIds.length).toFixed(2));
-    const totalSplitAmount = splitAmount * participantIds.length;
-    
-    // Handle rounding by adding the difference to the first participant
-    let adjustmentAmount = Number((amount - totalSplitAmount).toFixed(2));
 
     return this.db.transaction(async (trx) => {
       // Create the expense
@@ -56,19 +34,11 @@ export class ExpenseService {
 
       // Create expense splits
       const splits: ExpenseSplit[] = [];
-      for (let i = 0; i < participantIds.length; i++) {
-        const userId = participantIds[i];
-        let userSplitAmount = splitAmount;
-        
-        // Add adjustment to first participant to handle rounding
-        if (i === 0) {
-          userSplitAmount = Number((splitAmount + adjustmentAmount).toFixed(2));
-        }
-
+      for (const userId of participantIds) {
         const split: ExpenseSplit = {
           expense_id: expenseId,
           user_id: userId,
-          amount: userSplitAmount,
+          amount: splitAmount,
         };
 
         await trx('expense_splits').insert(split);
@@ -86,12 +56,6 @@ export class ExpenseService {
   }
 
   async findByGroupId(groupId: number): Promise<ExpenseWithSplits[]> {
-    // Validate that the group exists
-    const group = await this.db('groups').where({ id: groupId }).first();
-    if (!group) {
-      throw new Error('Group not found');
-    }
-
     // Get expenses for the group
     const expenses = await this.db('expenses')
       .where({ group_id: groupId })
@@ -125,11 +89,6 @@ export class ExpenseService {
   }
 
   async delete(id: number): Promise<void> {
-    const expense = await this.db('expenses').where({ id }).first();
-    if (!expense) {
-      throw new Error('Expense not found');
-    }
-
     await this.db.transaction(async (trx) => {
       // Delete expense splits first (due to foreign key constraint)
       await trx('expense_splits').where({ expense_id: id }).del();
