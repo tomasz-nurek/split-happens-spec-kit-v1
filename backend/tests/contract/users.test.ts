@@ -16,6 +16,7 @@ describe('Users API contract (per specs/001-expense-sharing-mvp/contracts/users.
     
     // Setup test database
     db = knex(knexConfig[process.env.NODE_ENV || 'test']);
+    await db.migrate.rollback(undefined, true); // Rollback all migrations first
     await db.migrate.latest();
     
     // Get a valid token for authenticated tests

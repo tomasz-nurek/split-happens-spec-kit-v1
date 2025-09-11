@@ -15,6 +15,7 @@ describe('User Management Integration Test (per specs/001-expense-sharing-mvp/qu
     
     // Setup test database
     db = knex(knexConfig[process.env.NODE_ENV || 'test']);
+    await db.migrate.rollback(undefined, true); // Rollback all migrations first
     await db.migrate.latest();
   });
 
