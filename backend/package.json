@@ -4,13 +4,13 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-  "start": "ts-node src/index.ts",
+    "start": "ts-node src/index.ts",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
-  "test": "vitest run",
-  "test:watch": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:migrate": "knex migrate:latest --knexfile knexfile.js",
     "db:seed": "knex seed:run --knexfile knexfile.js"
   },
@@ -19,7 +19,9 @@
   "license": "ISC",
   "packageManager": "pnpm@10.15.0",
   "dependencies": {
-    "express": "^5.1.0"
+    "@types/jsonwebtoken": "^9.0.10",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

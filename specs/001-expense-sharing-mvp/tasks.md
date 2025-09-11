@@ -78,8 +78,8 @@
 - [x] T026 GroupService for CRUD operations in backend/src/services/GroupService.ts
 - [x] T027 ExpenseService for CRUD operations and split calculation in backend/src/services/ExpenseService.ts
 - [x] T028 BalanceService for balance calculation algorithms in backend/src/services/BalanceService.ts
-- [ ] T029 ActivityService for logging actions in backend/src/services/ActivityService.ts
-- [ ] T030 AuthService for JWT authentication in backend/src/services/AuthService.ts
+- [x] T029 ActivityService for logging actions in backend/src/services/ActivityService.ts
+- [x] T030 AuthService for JWT authentication in backend/src/services/AuthService.ts
 
 ### Backend API Endpoints
 - [ ] T031 Auth endpoints (POST /api/auth/login, POST /api/auth/logout, GET /api/auth/verify) in backend/src/api/auth.ts
