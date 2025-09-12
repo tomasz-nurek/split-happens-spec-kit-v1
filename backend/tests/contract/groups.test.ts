@@ -3,6 +3,7 @@ import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
 import knex from 'knex';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const knexConfig = require('../../knexfile.js');
 
@@ -16,7 +17,8 @@ describe('Groups API contract (per specs/001-expense-sharing-mvp/contracts/group
 
     // Setup test DB and migrations (handle possible lock)
     db = knex(knexConfig[process.env.NODE_ENV || 'test']);
-    let retries = 3;
+  let retries = 3;
+  let delay = 50; // ms, exponential backoff
     while (retries > 0) {
       try {
         await db.migrate.rollback(undefined, true);
@@ -26,7 +28,8 @@ describe('Groups API contract (per specs/001-expense-sharing-mvp/contracts/group
         if (error.message && error.message.includes('Migration table is already locked')) {
           retries--;
           if (retries > 0) {
-            await new Promise(r => setTimeout(r, 100));
+      await sleep(delay);
+      delay = Math.min(delay * 2, 250);
           } else {
             throw error;
           }
