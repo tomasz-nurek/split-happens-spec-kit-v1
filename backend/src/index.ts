@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { authRouter } from './api/auth';
 import { usersRouter } from './api/users';
+import { groupsRouter } from './api/groups';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/groups', groupsRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello, world!');

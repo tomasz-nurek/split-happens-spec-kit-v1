@@ -84,7 +84,7 @@
 ### Backend API Endpoints
 - [x] T031 Auth endpoints (POST /api/auth/login, POST /api/auth/logout, GET /api/auth/verify) in backend/src/api/auth.ts  (implemented; contract tests passing)
 - [x] T032 User endpoints (GET /api/users, POST /api/users, DELETE /api/users/:id) in backend/src/api/users.ts  (implemented; contract and integration tests passing)
-- [ ] T033 Group endpoints (GET /api/groups, POST /api/groups, GET /api/groups/:id, POST /api/groups/:id/members, DELETE /api/groups/:id/members/:userId) in backend/src/api/groups.ts
+- [x] T033 Group endpoints (GET /api/groups, POST /api/groups, GET /api/groups/:id, POST /api/groups/:id/members, DELETE /api/groups/:id/members/:userId) in backend/src/api/groups.ts
 - [ ] T034 Expense endpoints (GET /api/groups/:id/expenses, POST /api/groups/:id/expenses, DELETE /api/expenses/:id) in backend/src/api/expenses.ts
 - [ ] T035 Balance endpoints (GET /api/groups/:id/balances, GET /api/users/:id/balance) in backend/src/api/balances.ts
 - [ ] T036 Activity endpoint (GET /api/activity) in backend/src/api/activity.ts
