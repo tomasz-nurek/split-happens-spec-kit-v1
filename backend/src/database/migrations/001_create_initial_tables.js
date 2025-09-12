@@ -47,6 +47,23 @@ exports.up = async function(knex) {
     table.text('details');
     table.timestamp('created_at').defaultTo(knex.fn.now());
   });
+
+  // Seed test data
+  await knex('users').insert([
+    { name: 'Alice' },
+    { name: 'Bob' },
+    { name: 'Charlie' }
+  ]);
+
+  await knex('groups').insert([
+    { name: 'Test Group' }
+  ]);
+
+  await knex('group_members').insert([
+    { group_id: 1, user_id: 1 },
+    { group_id: 1, user_id: 2 },
+    { group_id: 1, user_id: 3 }
+  ]);
 };
 
 exports.down = async function(knex) {
