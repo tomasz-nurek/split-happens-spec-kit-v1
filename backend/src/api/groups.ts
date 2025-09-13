@@ -110,17 +110,30 @@ router.post('/:id/members', requireAuth, async (req: Request, res: Response) => 
       return res.status(400).json({ error: 'userIds (non-empty array) is required' });
     }
 
-    // Add members; validate that users exist
+    // Parse and validate user IDs
+    const validUserIds: number[] = [];
     for (const rawUserId of userIds) {
       const userId = parseInt(rawUserId, 10);
-      if (isNaN(userId) || userId <= 0) continue;
-
-      const user = await userService.findById(userId);
-      if (!user) {
-        // Skip non-existent users; alternatively, could return 404
-        continue;
+      if (!isNaN(userId) && userId > 0) {
+        validUserIds.push(userId);
       }
+    }
 
+    if (validUserIds.length === 0) {
+      return res.status(400).json({ error: 'No valid user IDs provided' });
+    }
+
+    // Batch validate user existence
+    const { valid: existingUserIds, invalid: invalidUserIds } = await userService.validateUserIds(validUserIds);
+    
+    if (invalidUserIds.length > 0) {
+      return res.status(400).json({ 
+        error: `Invalid user IDs: ${invalidUserIds.join(', ')}` 
+      });
+    }
+
+    // Add members (all users are validated to exist)
+    for (const userId of existingUserIds) {
       try {
         await groupService.addMember(id, userId);
       } catch (e) {
