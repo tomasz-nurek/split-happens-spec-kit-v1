@@ -91,7 +91,7 @@
 
 ### Backend Middleware and Utilities
 - [x] T037 Authentication middleware in backend/src/middleware/auth.ts
-- [ ] T038 Input validation utilities in backend/src/utils/validation.ts
+- [x] T038 Input validation utilities in backend/src/utils/validation.ts
 - [ ] T039 Error handling middleware in backend/src/middleware/error.ts
 - [ ] T040 Database connection and setup in backend/src/database/index.ts
 
