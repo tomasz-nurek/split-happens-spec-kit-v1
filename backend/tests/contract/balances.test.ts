@@ -1,16 +1,21 @@
 import { describe, it, beforeAll, expect } from 'vitest';
 import request from 'supertest';
-import express from 'express';
+import { app } from '../../src/index';
+import { AuthService } from '../../src/services/AuthService';
 
 describe('Balances API contract (per specs/001-expense-sharing-mvp/contracts/balances.yaml)', () => {
-  let app: express.Express;
+  let authService: AuthService;
+  let authToken: string;
 
-  beforeAll(() => {
-    app = express();
-    app.use(express.json());
-    // No routes implemented yet — tests should fail until endpoints are added.
+  beforeAll(async () => {
+    authService = new AuthService();
+    // Get a valid token for authenticated tests
+    const credentials = authService.getAdminCredentials();
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ username: credentials.username, password: credentials.password });
+    authToken = loginRes.body.token;
   });
-
   describe('GET /api/groups/:id/balances', () => {
     it('returns 401 when unauthorized', async () => {
       const res = await request(app).get('/api/groups/1/balances');
@@ -21,7 +26,9 @@ describe('Balances API contract (per specs/001-expense-sharing-mvp/contracts/bal
     });
 
     it('returns 404 for non-existent group', async () => {
-      const res = await request(app).get('/api/groups/999/balances');
+      const res = await request(app)
+        .get('/api/groups/999/balances')
+        .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(404);
       expect(res.body).toEqual(
         expect.objectContaining({ error: expect.any(String) })
@@ -29,7 +36,9 @@ describe('Balances API contract (per specs/001-expense-sharing-mvp/contracts/bal
     });
 
     it('returns 200 with group balances array when valid', async () => {
-      const res = await request(app).get('/api/groups/1/balances');
+      const res = await request(app)
+        .get('/api/groups/1/balances')
+        .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
       if (res.body.length > 0) {
@@ -75,7 +84,9 @@ describe('Balances API contract (per specs/001-expense-sharing-mvp/contracts/bal
     });
 
     it('returns 404 for non-existent user', async () => {
-      const res = await request(app).get('/api/users/999/balance');
+      const res = await request(app)
+        .get('/api/users/999/balance')
+        .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(404);
       expect(res.body).toEqual(
         expect.objectContaining({ error: expect.any(String) })
@@ -83,7 +94,9 @@ describe('Balances API contract (per specs/001-expense-sharing-mvp/contracts/bal
     });
 
     it('returns 200 with user balance object when valid', async () => {
-      const res = await request(app).get('/api/users/1/balance');
+      const res = await request(app)
+        .get('/api/users/1/balance')
+        .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
       expect(res.body).toEqual(
         expect.objectContaining({

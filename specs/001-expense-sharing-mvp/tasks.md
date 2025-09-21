@@ -122,6 +122,7 @@
 - [ ] T058 Implement request/response logging to activity_log table
 - [ ] T059 Setup routing with guards in Angular frontend
 - [ ] T060 Setup HTTP interceptor for auth token in Angular frontend
+- [ ] T068 Align integration tests to exported app and env (use `app` from `backend/src/index.ts`; set `ADMIN_PASSWORD=admin123` in `backend/.env`) for files: `backend/tests/integration/admin-auth.test.ts`, `backend/tests/integration/group-management.test.ts`, `backend/tests/integration/expense-management.test.ts`, `backend/tests/integration/balance-calculation.test.ts`, `backend/tests/integration/activity-logging.test.ts`
 
 ## Phase 3.6: Polish
 - [ ] T061 [P] Unit tests for validation rules in backend/tests/unit/validation.test.ts
