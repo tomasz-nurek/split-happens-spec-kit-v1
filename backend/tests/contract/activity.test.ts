@@ -1,13 +1,13 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
-import knex from 'knex';
+import knex, { Knex } from 'knex';
 
 const knexConfig = require('../../knexfile.js');
 
 describe('Activity API contract (per specs/001-expense-sharing-mvp/contracts/activity.yaml)', () => {
   let authToken: string;
-  let db: any;
+  let db: Knex;
 
   beforeAll(async () => {
     // Setup test database with migration lock handling
