@@ -2,21 +2,17 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
-import knex from 'knex';
+import db from '../../src/database';
 import { setTimeout as sleep } from 'node:timers/promises';
-
-const knexConfig = require('../../knexfile.js');
 
 describe('Expenses API contract (per specs/001-expense-sharing-mvp/contracts/expenses.yaml)', () => {
   let authService: AuthService;
   let authToken: string;
-  let db: any;
 
   beforeAll(async () => {
     authService = new AuthService();
 
     // Setup test DB and migrations (handle possible lock)
-    db = knex(knexConfig[process.env.NODE_ENV || 'test']);
     let retries = 3;
     let delay = 50; // ms, exponential backoff
     while (retries > 0) {

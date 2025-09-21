@@ -1,5 +1,4 @@
-import knex from 'knex';
-const knexConfig = require('../../knexfile.js');
+import db from '../database';
 import { Expense } from '../models/Expense';
 import { ExpenseSplit } from '../models/ExpenseSplit';
 import { ActivityService } from './ActivityService';
@@ -17,7 +16,7 @@ export interface CreateExpenseRequest {
 }
 
 export class ExpenseService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'test']);
+  private db = db;
   private activityService = new ActivityService();
 
   async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseWithSplits> {

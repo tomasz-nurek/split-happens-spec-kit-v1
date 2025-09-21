@@ -1,16 +1,12 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
-import knex from 'knex';
-
-const knexConfig = require('../../knexfile.js');
+import db from '../../src/database';
 
 describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
-  let db: any;
 
   beforeAll(async () => {
     // Setup test database with migration lock handling
-    db = knex(knexConfig[process.env.NODE_ENV || 'test']);
 
     // Handle migration locks that can occur in concurrent test runs
     let retries = 3;
