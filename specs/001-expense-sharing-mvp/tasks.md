@@ -87,7 +87,7 @@
 - [x] T033 Group endpoints (GET /api/groups, POST /api/groups, GET /api/groups/:id, POST /api/groups/:id/members, DELETE /api/groups/:id/members/:userId) in backend/src/api/groups.ts
 - [x] T034 Expense endpoints (GET /api/groups/:id/expenses, POST /api/groups/:id/expenses, DELETE /api/expenses/:id) in backend/src/api/expenses.ts
 - [x] T035 Balance endpoints (GET /api/groups/:id/balances, GET /api/users/:id/balance) in backend/src/api/balances.ts
-- [ ] T036 Activity endpoint (GET /api/activity) in backend/src/api/activity.ts
+- [x] T036 Activity endpoint (GET /api/activity) in backend/src/api/activity.ts  (implemented; contract tests passing)
 
 ### Backend Middleware and Utilities
 - [ ] T037 Authentication middleware in backend/src/middleware/auth.ts
