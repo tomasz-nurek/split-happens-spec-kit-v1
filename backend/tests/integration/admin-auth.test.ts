@@ -47,7 +47,7 @@ describe('Admin Login Flow Integration Test (per specs/001-expense-sharing-mvp/q
         .post('/api/auth/login')
         .send({
           username: 'admin',
-          password: 'password123'
+          password: 'admin123'
         });
 
       expect(loginRes.status).toBe(200);
@@ -118,7 +118,7 @@ describe('Admin Login Flow Integration Test (per specs/001-expense-sharing-mvp/q
         .post('/api/auth/login')
         .send({
           username: 'regularuser',
-          password: 'password123'
+          password: 'admin123'
         });
 
       expect(loginRes.status).toBe(401);

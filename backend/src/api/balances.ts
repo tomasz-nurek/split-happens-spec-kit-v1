@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from './auth';
+import { requireAuth } from '../middleware/auth';
 import { BalanceService } from '../services/BalanceService';
 import { GroupService } from '../services/GroupService';
 import { UserService } from '../services/UserService';

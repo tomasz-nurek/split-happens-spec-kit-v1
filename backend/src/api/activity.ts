@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { ActivityService } from '../services/ActivityService';
-import { requireAuth } from './auth';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 const activityService = new ActivityService();
