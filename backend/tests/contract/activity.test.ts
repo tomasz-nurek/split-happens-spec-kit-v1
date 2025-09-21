@@ -1,19 +1,15 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
-import { AuthService } from '../../src/services/AuthService';
 import knex from 'knex';
 
 const knexConfig = require('../../knexfile.js');
 
 describe('Activity API contract (per specs/001-expense-sharing-mvp/contracts/activity.yaml)', () => {
-  let authService: AuthService;
   let authToken: string;
   let db: any;
 
   beforeAll(async () => {
-    authService = new AuthService();
-    
     // Setup test database with migration lock handling
     db = knex(knexConfig[process.env.NODE_ENV || 'test']);
     
@@ -37,16 +33,19 @@ describe('Activity API contract (per specs/001-expense-sharing-mvp/contracts/act
       }
     }
 
-    const result = await authService.login({
-      username: process.env.ADMIN_USERNAME || 'admin',
-      password: process.env.ADMIN_PASSWORD || 'admin123'
-    });
+    // Login via public API to get auth token (decouples from AuthService internals)
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({
+        username: process.env.ADMIN_USERNAME || 'admin',
+        password: process.env.ADMIN_PASSWORD || 'password123'
+      });
 
-    if (!result) {
-      throw new Error('Failed to login admin user');
+    if (loginRes.status !== 200) {
+      throw new Error(`Failed to login admin user: ${loginRes.status} ${loginRes.text}`);
     }
 
-    authToken = result.token;
+    authToken = loginRes.body.token;
   });
 
   afterAll(async () => {
