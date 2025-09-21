@@ -9,6 +9,15 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface LoginResult {
+  token: string;
+  user: {
+    id: number;
+    name: string;
+    role: string;
+  };
+}
+
 export interface TokenPayload {
   username: string;
   role: string;
@@ -36,7 +45,7 @@ export class AuthService {
   /**
    * Authenticate admin user with credentials
    */
-  async login(credentials: LoginCredentials): Promise<{ token: string } | null> {
+  async login(credentials: LoginCredentials): Promise<LoginResult | null> {
     const { username, password } = credentials;
 
     // Validate required fields
@@ -59,7 +68,14 @@ export class AuthService {
       expiresIn: '24h'
     });
 
-    return { token };
+    return { 
+      token,
+      user: {
+        id: 1, // Admin user ID
+        name: 'Admin User',
+        role: 'admin'
+      }
+    };
   }
 
   /**

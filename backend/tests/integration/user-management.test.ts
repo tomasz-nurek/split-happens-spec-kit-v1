@@ -2,20 +2,16 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
-import knex from 'knex';
-
-const knexConfig = require('../../knexfile.js');
+import db from '../../src/database';
 
 describe('User Management Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
-  let db: any;
   let authService: AuthService;
 
   beforeAll(async () => {
     authService = new AuthService();
-    
+
     // Setup test database with migration lock handling
-    db = knex(knexConfig[process.env.NODE_ENV || 'test']);
-    
+
     // Handle migration locks that can occur in concurrent test runs
     let retries = 3;
     while (retries > 0) {

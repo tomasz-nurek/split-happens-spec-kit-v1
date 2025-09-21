@@ -1,5 +1,4 @@
-import knex from 'knex';
-const knexConfig = require('../../knexfile.js');
+import db from '../database';
 import { User } from '../models/User';
 import { Group } from '../models/Group';
 
@@ -60,7 +59,7 @@ export interface UserOverallBalance {
 }
 
 export class BalanceService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
+  private db = db;
 
   /**
    * Calculates the balance of each member in a given group and provides a

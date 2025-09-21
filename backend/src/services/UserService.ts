@@ -1,9 +1,8 @@
-import knex from 'knex';
-const knexConfig = require('../../knexfile.js');
+import db from '../database';
 import { User } from '../models/User';
 
 export class UserService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
+  private db = db;
 
   async create(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
     const [id] = await this.db('users').insert(user);

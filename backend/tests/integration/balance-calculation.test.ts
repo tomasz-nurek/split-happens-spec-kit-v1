@@ -1,17 +1,41 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-
-// Create a basic Express app for testing (endpoints not implemented yet)
-const app = express();
-app.use(express.json());
-
-// Mock routes that will return 404 until implemented
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: 'Not implemented yet' });
-});
+import { app } from '../../src/index';
+import db from '../../src/database';
 
 describe('Balance Calculation Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
+
+  beforeAll(async () => {
+    // Setup test database with migration lock handling
+
+    // Handle migration locks that can occur in concurrent test runs
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await db.migrate.rollback(undefined, true); // Rollback all migrations first
+        await db.migrate.latest();
+        break; // Success, exit retry loop
+      } catch (error: any) {
+        if (error.message && error.message.includes('Migration table is already locked')) {
+          retries--;
+          if (retries > 0) {
+            console.log(`Migration locked, retrying... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before retry
+          } else {
+            throw error; // Re-throw if all retries exhausted
+          }
+        } else {
+          throw error; // Re-throw non-lock errors immediately
+        }
+      }
+    }
+  });
+
+  afterAll(async () => {
+    // Clean up test database
+    await db.destroy();
+  });
+
   describe('Complete Balance Calculation Flow', () => {
     it('should complete full balance calculation flow with admin authentication', async () => {
       // Step 1: Admin login

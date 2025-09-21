@@ -5,6 +5,7 @@ import { usersRouter } from './api/users';
 import { groupsRouter } from './api/groups';
 import { expensesRouter } from './api/expenses';
 import { balancesRouter } from './api/balances';
+import { activityRouter } from './api/activity';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,6 +20,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/groups', groupsRouter);
 app.use('/api', expensesRouter);
 app.use('/api', balancesRouter);
+app.use('/api', activityRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello, world!');
