@@ -1,15 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-
-// Create a basic Express app for testing (endpoints not implemented yet)
-const app = express();
-app.use(express.json());
-
-// Mock routes that will return 404 until implemented
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: 'Not implemented yet' });
-});
+import { app } from '../../src/index';
 
 describe('Activity Logging Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
   describe('Complete Activity Logging Flow', () => {
