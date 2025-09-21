@@ -90,7 +90,7 @@
 - [x] T036 Activity endpoint (GET /api/activity) in backend/src/api/activity.ts  (implemented; contract tests passing)
 
 ### Backend Middleware and Utilities
-- [ ] T037 Authentication middleware in backend/src/middleware/auth.ts
+- [x] T037 Authentication middleware in backend/src/middleware/auth.ts
 - [ ] T038 Input validation utilities in backend/src/utils/validation.ts
 - [ ] T039 Error handling middleware in backend/src/middleware/error.ts
 - [ ] T040 Database connection and setup in backend/src/database/index.ts

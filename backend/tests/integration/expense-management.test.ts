@@ -43,7 +43,7 @@ describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp
         .post('/api/auth/login')
         .send({
           username: 'admin',
-          password: 'password123'
+          password: 'admin123'
         });
 
       expect(loginRes.status).toBe(200);
@@ -267,7 +267,7 @@ describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp
         .post('/api/auth/login')
         .send({
           username: 'admin',
-          password: 'password123'
+          password: 'admin123'
         });
 
       expect(loginRes.status).toBe(200);
@@ -307,7 +307,7 @@ describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp
         .post('/api/auth/login')
         .send({
           username: 'admin',
-          password: 'password123'
+          password: 'admin123'
         });
 
       expect(loginRes.status).toBe(200);
@@ -343,7 +343,7 @@ describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp
         .post('/api/auth/login')
         .send({
           username: 'admin',
-          password: 'password123'
+          password: 'admin123'
         });
 
       expect(loginRes.status).toBe(200);
