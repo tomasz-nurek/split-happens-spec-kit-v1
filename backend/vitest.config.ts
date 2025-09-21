@@ -7,5 +7,11 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     watch: false,
     hookTimeout: 10000,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    }
   },
 });

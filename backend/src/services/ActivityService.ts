@@ -3,7 +3,7 @@ const knexConfig = require('../../knexfile.js');
 import { ActivityLog, ActivityAction, ActivityEntityType } from '../models/ActivityLog';
 
 export class ActivityService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
+  private db = knex(knexConfig[process.env.NODE_ENV || 'test']);
 
   async create(activity: Omit<ActivityLog, 'id' | 'created_at'>): Promise<ActivityLog> {
     const [id] = await this.db('activity_log').insert(activity);

@@ -2,6 +2,8 @@ import knex from 'knex';
 const knexConfig = require('../../knexfile.js');
 import { Expense } from '../models/Expense';
 import { ExpenseSplit } from '../models/ExpenseSplit';
+import { ActivityService } from './ActivityService';
+import { ActivityAction, ActivityEntityType } from '../models/ActivityLog';
 
 export interface ExpenseWithSplits extends Expense {
   splits: ExpenseSplit[];
@@ -15,7 +17,8 @@ export interface CreateExpenseRequest {
 }
 
 export class ExpenseService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
+  private db = knex(knexConfig[process.env.NODE_ENV || 'test']);
+  private activityService = new ActivityService();
 
   async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseWithSplits> {
     const { amount, description, paidBy, participantIds } = expenseData;
@@ -60,6 +63,15 @@ export class ExpenseService {
         ...createdExpense,
         splits,
       };
+    }).then(async (result) => {
+      // Log activity after transaction completes successfully
+      await this.activityService.logActivity(
+        ActivityAction.CREATE,
+        ActivityEntityType.expense,
+        result.id,
+        `Created expense: ${description}`
+      );
+      return result;
     });
   }
 

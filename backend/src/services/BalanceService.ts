@@ -60,7 +60,7 @@ export interface UserOverallBalance {
 }
 
 export class BalanceService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
+  private db = knex(knexConfig[process.env.NODE_ENV || 'test']);
 
   /**
    * Calculates the balance of each member in a given group and provides a

@@ -3,7 +3,7 @@ const knexConfig = require('../../knexfile.js');
 import { Group } from '../models/Group';
 
 export class GroupService {
-  private db = knex(knexConfig[process.env.NODE_ENV || 'development']);
+  private db = knex(knexConfig[process.env.NODE_ENV || 'test']);
 
   async create(group: Omit<Group, 'id' | 'created_at'>): Promise<Group> {
     const [id] = await this.db('groups').insert(group);
