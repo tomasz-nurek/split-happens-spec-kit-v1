@@ -86,7 +86,7 @@
 - [x] T032 User endpoints (GET /api/users, POST /api/users, DELETE /api/users/:id) in backend/src/api/users.ts  (implemented; contract and integration tests passing)
 - [x] T033 Group endpoints (GET /api/groups, POST /api/groups, GET /api/groups/:id, POST /api/groups/:id/members, DELETE /api/groups/:id/members/:userId) in backend/src/api/groups.ts
 - [x] T034 Expense endpoints (GET /api/groups/:id/expenses, POST /api/groups/:id/expenses, DELETE /api/expenses/:id) in backend/src/api/expenses.ts
-- [ ] T035 Balance endpoints (GET /api/groups/:id/balances, GET /api/users/:id/balance) in backend/src/api/balances.ts
+- [x] T035 Balance endpoints (GET /api/groups/:id/balances, GET /api/users/:id/balance) in backend/src/api/balances.ts
 - [ ] T036 Activity endpoint (GET /api/activity) in backend/src/api/activity.ts
 
 ### Backend Middleware and Utilities
@@ -122,6 +122,7 @@
 - [ ] T058 Implement request/response logging to activity_log table
 - [ ] T059 Setup routing with guards in Angular frontend
 - [ ] T060 Setup HTTP interceptor for auth token in Angular frontend
+- [ ] T068 Align integration tests to exported app and env (use `app` from `backend/src/index.ts`; set `ADMIN_PASSWORD=admin123` in `backend/.env`) for files: `backend/tests/integration/admin-auth.test.ts`, `backend/tests/integration/group-management.test.ts`, `backend/tests/integration/expense-management.test.ts`, `backend/tests/integration/balance-calculation.test.ts`, `backend/tests/integration/activity-logging.test.ts`
 
 ## Phase 3.6: Polish
 - [ ] T061 [P] Unit tests for validation rules in backend/tests/unit/validation.test.ts
