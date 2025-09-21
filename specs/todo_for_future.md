@@ -62,20 +62,81 @@ This document tracks critical improvements identified during code reviews that s
 
 **Impact:** Low to medium maintainability and security risk, affects code robustness and production monitoring
 
+## 5. Activity Endpoint Security and Performance Issues
+
+**Problem:** Security vulnerabilities and performance issues identified in T036 Activity endpoint implementation.
+
+**Why Important:**
+- Security: Information disclosure through error messages and missing rate limiting
+- Performance: Unbounded queries could cause DoS and database overload
+- Reliability: Integration test failures indicate system integration problems
+- Data protection: Audit logs are sensitive and need proper access controls
+
+**Specific Issues:**
+- **Critical:** Integration tests failing (0/6 passing) - auth format mismatch, 404 routing errors
+- **Security:** No rate limiting on activity endpoint - vulnerable to DoS attacks
+- **Security:** Error messages too verbose - could leak sensitive information in production
+- **Performance:** Missing pagination limits - users can request unlimited data via large limit values
+- **Performance:** No database indexing on `created_at` for sorting operations
+- **Validation:** Missing edge case handling for array query parameters
+- **Validation:** No maximum limit validation (users could request millions of records)
+- **Logging:** Console.error exposes full error objects with potential sensitive data
+- **Architecture:** Service creates new DB connection per instance instead of pooling
+
+**Auth Response Format Issue:**
+- Tests expect `{ token, user: { id, name, role } }` but implementation returns only `{ token }`
+- Suggests broader authentication system inconsistency
+
+**Performance Risks:**
+- Query: `SELECT * FROM activity_log ORDER BY created_at DESC LIMIT ?` without index
+- No query timeout handling for long-running sorts
+- Memory usage scales linearly with requested limit
+
+**Impact:** High security and performance risk, affects production stability and data protection
+
+## 6. Rate Limiting Infrastructure
+
+**Problem:** No rate limiting implemented across any API endpoints.
+
+**Why Important:**
+- DoS protection: Prevents malicious users from overwhelming the system
+- Resource preservation: Protects database and server resources under load
+- Cost control: Limits infrastructure costs from abuse
+- Fair usage: Ensures all users get reasonable access to the service
+
+**Specific Issues:**
+- No rate limiting middleware implemented anywhere in the codebase
+- Activity endpoint particularly vulnerable due to potentially large datasets
+- Balance calculation endpoints could be computationally expensive
+- No monitoring or alerting for unusual traffic patterns
+
+**Recommended Implementation:**
+- Express-rate-limit middleware with Redis backing store
+- Different limits per endpoint type (auth: 5/min, data: 100/min, activity: 10/min)
+- IP-based and user-based rate limiting
+- Graceful degradation with 429 status codes
+
+**Impact:** High security risk, affects system availability and operational costs
+
 ## Implementation Priorities
 
-1. **Phase 1 (Immediate - Security First):** Input sanitization
-2. **Phase 2 (Performance Critical):** Resource management
-3. **Phase 3 (Architectural Improvement):** Dependency injection
-4. **Phase 4 (Code Quality):** Balance endpoints improvements
+1. **Phase 1 (Immediate - Security First):** Input sanitization, Rate limiting infrastructure
+2. **Phase 2 (Critical - Fix Integration):** Activity endpoint integration test failures
+3. **Phase 3 (Performance Critical):** Resource management, Activity endpoint pagination limits
+4. **Phase 4 (Architectural Improvement):** Dependency injection
+5. **Phase 5 (Code Quality):** Balance endpoints improvements, Error message standardization
 
 ## Related Issues
 
 - Performance bottlenecks under concurrent load
-- Security vulnerabilities from user inputs
+- Security vulnerabilities from user inputs and DoS attacks
 - Difficulty writing comprehensive unit tests
 - Code duplication in service instantiation patterns
 - Scalability limitations for future growth
 - Non-defensive programming patterns with potential runtime errors
 - Inconsistent error logging practices across endpoints
 - Missing comprehensive input validation and edge case testing
+- Integration test failures indicating broader system issues
+- Information disclosure through verbose error messages
+- Lack of database performance optimization (indexing, connection pooling)
+- No monitoring or alerting for unusual API usage patterns
