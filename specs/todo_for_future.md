@@ -2,6 +2,44 @@
 
 This document tracks critical improvements identified during code reviews that should be addressed in future iterations.
 
+## 0. Error Handling System Improvements (T039 Follow-up)
+
+**Problem:** Error handling middleware implementation has security and integration issues.
+
+**Why Important:**
+- **Security Critical**: Information disclosure vulnerability in development/staging environments
+- **Architecture**: Error classes created but not integrated with API routes, reducing effectiveness
+- **Testing**: Zero test coverage for critical error handling infrastructure
+- **Monitoring**: Lack of structured logging and error correlation makes production debugging difficult
+
+**Specific Issues:**
+- **Security**: Raw error messages exposed in non-production environments could leak sensitive data
+- **Integration**: API routes still use manual try-catch instead of leveraging centralized error classes
+- **Performance**: Heavy timestamp generation on every error
+- **Reliability**: No tests for error middleware means potential regressions undetected
+- **Monitoring**: Mixed console.log/console.error without structured logging for production monitoring
+- **Debugging**: No request correlation IDs making production error tracking difficult
+
+**Required Actions:**
+```typescript
+// Security fix - always sanitize error messages:
+default:
+  console.error(`[${logContext.timestamp}] Unhandled Error:`, {
+    name: error.name,
+    requestId: req.headers['x-request-id'] // Use correlation ID
+  });
+  errorMessage = 'Internal server error'; // Always generic
+
+// Integration fix - update API routes:
+try {
+  // ... route logic  
+} catch (error) {
+  next(new DatabaseError('Operation failed', error)); // Use error classes
+}
+```
+
+**Impact:** High security and architectural risk, affects production debugging and system reliability
+
 ## 1. Input Sanitization
 
 **Problem:** Current API endpoints lack proper input validation and sanitization.
@@ -169,14 +207,26 @@ if (!nameValidation.isValid) {
 
 ## Implementation Priorities
 
-1. **Phase 1 (Immediate - Security First):** Input sanitization, Rate limiting infrastructure
-2. **Phase 2 (Critical - Fix Integration):** Activity endpoint integration test failures
-3. **Phase 3 (Performance Critical):** Resource management, Activity endpoint pagination limits
-4. **Phase 4 (Architectural Improvement):** Dependency injection, Validation utilities integration
-5. **Phase 5 (Code Quality):** Balance endpoints improvements, Error message standardization
+1. **Phase 0 (IMMEDIATE - Security Critical):** 
+   - T039b: Fix error handling security vulnerabilities (information disclosure)
+   - T039c: Add error handling test coverage (prevent regressions)
+2. **Phase 1 (Immediate - Security First):** 
+   - Input sanitization, Rate limiting infrastructure
+3. **Phase 2 (Critical - Fix Integration):** 
+   - Activity endpoint integration test failures
+   - T039b: Integrate error classes with API routes
+4. **Phase 3 (Performance Critical):** 
+   - Resource management, Activity endpoint pagination limits
+5. **Phase 4 (Architectural Improvement):** 
+   - Dependency injection, Validation utilities integration
+6. **Phase 5 (Code Quality):** 
+   - Balance endpoints improvements, Error message standardization
 
 ## Related Issues
 
+- **Error handling security vulnerabilities from information disclosure in development environments**
+- **Unused error handling infrastructure reducing system robustness and debugging capabilities**
+- **Missing test coverage for critical error handling middleware**
 - Performance bottlenecks under concurrent load
 - Security vulnerabilities from user inputs and DoS attacks
 - Difficulty writing comprehensive unit tests
