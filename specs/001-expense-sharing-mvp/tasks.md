@@ -92,54 +92,119 @@
 ### Backend Middleware and Utilities
 - [x] T037 Authentication middleware in backend/src/middleware/auth.ts
 - [x] T038 Input validation utilities in backend/src/utils/validation.ts
+  - ✅ **COMPLETED**: All validation functions implement data-model.md business rules:
+    - User/Group names (1-100 chars, no whitespace-only)
+    - Expense amounts (positive, max 2 decimals) and descriptions (1-500 chars)
+    - Split amounts (non-negative, max 2 decimals) with sum validation
+    - ID validation (positive integers, arrays, no duplicates)
+    - Activity log validation (CREATE/DELETE actions, entity types)
+    - Helper functions for combining results and formatting API errors
+- [ ] T038a Refactor API endpoints to use centralized validation utilities
+  - **REQUIREMENT**: Replace inline validation in API endpoints with centralized utilities:
+    - Update backend/src/api/auth.ts to use validation utilities for login credentials
+    - Update backend/src/api/users.ts to use validateUserName() instead of inline checks
+    - Update backend/src/api/groups.ts to use validateGroupName() and validateIdArray()
+    - Update backend/src/api/expenses.ts to use validateAmount(), validateExpenseDescription(), validateId() for comprehensive validation
+    - Update backend/src/api/balances.ts to use validateId() for parameter validation
+    - Ensure consistent error response formatting using formatValidationErrors()
+    - Remove duplicated validation logic and use combineValidationResults() for multiple checks
 - [ ] T039 Error handling middleware in backend/src/middleware/error.ts
+  - **REQUIREMENT**: Centralized Express error handling middleware that:
+    - Catches unhandled errors from all routes
+    - Formats errors consistently as `{ error: string }` per API contracts
+    - Maps error types to appropriate HTTP status codes (400, 401, 404, 500)
+    - Logs errors appropriately (console.error for 500s, debug info for others)
+    - Integrates with validation utilities error formatting
+    - Handles common error types: ValidationError, AuthError, NotFoundError, DatabaseError
+    - Prevents sensitive information exposure in production
+    - Should be added to Express app after all routes in src/index.ts
 - [ ] T040 Database connection and setup in backend/src/database/index.ts
+  - **REQUIREMENT**: Enhanced database initialization and connection management:
+    - Initialize knex instance with proper environment configuration (dev/test/production)
+    - Add automatic migration runner on application startup using `knex.migrate.latest()`
+    - Implement database health check function to verify connectivity
+    - Add graceful error handling for database connection failures
+    - Export configured db instance for use across backend services
+    - Add database connection logging for debugging
+    - Ensure migrations run before any API endpoints are available
+    - Handle database file creation for SQLite if it doesn't exist
 
 ## Phase 3.4: Frontend Implementation
 
-### Frontend Services
-- [ ] T041 [P] Auth service with signals in frontend/src/services/auth.service.ts
+### Frontend Project Setup (Prerequisites for services)
+- [ ] T041 Setup Angular project structure and core configuration in frontend/src/
+  - **REQUIREMENT**: Establish proper Angular v20 project foundation:
+    - Create directory structure: `services/`, `components/`, `guards/`, `interceptors/`, `types/`
+    - Configure HttpClient in app.config.ts with `provideHttpClient()`
+    - Setup base API service in `frontend/src/services/api.service.ts` with environment-based URL configuration
+    - Create error handling service in `frontend/src/services/error.service.ts` for centralized error management
+    - Setup TypeScript interfaces in `frontend/src/types/` for API response types (User, Group, Expense, etc.)
+    - Configure basic routing in app.routes.ts with placeholder routes
+    - Add Angular Material or basic CSS framework for consistent UI components
+    - Ensure standalone components architecture is properly configured
+
+### Frontend Services  
+- [ ] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
+### Frontend Services  
+- [ ] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
+  - **REQUIREMENT**: JWT-based authentication service using Angular signals:
+    - Implement signal-based state management for authentication status
+    - Login/logout methods that communicate with backend auth API
+    - Token storage in localStorage with automatic refresh
+    - Auth state computed signals for reactive UI updates
+    - Integration with auth guard for route protection
 - [ ] T042 [P] User service with signals in frontend/src/services/user.service.ts
 - [ ] T043 [P] Group service with signals in frontend/src/services/group.service.ts
 - [ ] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts
 - [ ] T045 [P] Balance service with signals in frontend/src/services/balance.service.ts
 - [ ] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
 
+### Frontend Guards and Interceptors
+- [ ] T047 Auth guard and HTTP interceptor setup in frontend/src/guards/ and frontend/src/interceptors/
+  - **REQUIREMENT**: Authentication and HTTP handling infrastructure:
+    - Create auth guard in `frontend/src/guards/auth.guard.ts` that checks authentication state
+    - Implement HTTP interceptor in `frontend/src/interceptors/auth.interceptor.ts` for automatic token injection
+    - Create error interceptor in `frontend/src/interceptors/error.interceptor.ts` for global error handling
+    - Configure guards and interceptors in app.config.ts
+    - Setup route protection for all authenticated routes
+
 ### Frontend Components
-- [ ] T047 Login component with signal-based form state in frontend/src/components/login/login.component.ts
-- [ ] T048 User management component (list, create, delete) in frontend/src/components/users/users.component.ts
-- [ ] T049 Group management component (list, create, add/remove members) in frontend/src/components/groups/groups.component.ts
-- [ ] T050 Expense form component with signal-based state in frontend/src/components/expenses/expense-form.component.ts
-- [ ] T051 Expense list component with computed signals in frontend/src/components/expenses/expense-list.component.ts
-- [ ] T052 Balance display component with computed signals in frontend/src/components/balances/balance.component.ts
-- [ ] T053 Activity log component with signal-based updates in frontend/src/components/activity/activity.component.ts
-- [ ] T054 Navigation menu with computed signal for auth state in frontend/src/components/navigation/navigation.component.ts
-- [ ] T055 Base layout component in frontend/src/components/layout/layout.component.ts
+- [ ] T048 Login component with signal-based form state in frontend/src/components/login/login.component.ts
+- [ ] T049 User management component (list, create, delete) in frontend/src/components/users/users.component.ts
+- [ ] T050 Group management component (list, create, add/remove members) in frontend/src/components/groups/groups.component.ts
+- [ ] T051 Expense form component with signal-based state in frontend/src/components/expenses/expense-form.component.ts
+- [ ] T052 Expense list component with computed signals in frontend/src/components/expenses/expense-list.component.ts
+- [ ] T053 Balance display component with computed signals in frontend/src/components/balances/balance.component.ts
+- [ ] T054 Activity log component with signal-based updates in frontend/src/components/activity/activity.component.ts
+- [ ] T055 Navigation menu with computed signal for auth state in frontend/src/components/navigation/navigation.component.ts
+- [ ] T056 Base layout component in frontend/src/components/layout/layout.component.ts
 
 ## Phase 3.5: Integration
-- [ ] T056 Connect backend services to SQLite database
-- [ ] T057 Setup CORS configuration for Angular frontend
-- [ ] T058 Implement request/response logging to activity_log table
-- [ ] T059 Setup routing with guards in Angular frontend
-- [ ] T060 Setup HTTP interceptor for auth token in Angular frontend
+- [ ] T057 Connect backend services to SQLite database
+- [ ] T058 Setup CORS configuration for Angular frontend
+- [ ] T059 Implement request/response logging to activity_log table
+- [ ] T060 Setup routing with guards in Angular frontend
+- [ ] T061 Setup HTTP interceptor for auth token in Angular frontend
 - [ ] T068 Align integration tests to exported app and env (use `app` from `backend/src/index.ts`; set `ADMIN_PASSWORD=admin123` in `backend/.env`) for files: `backend/tests/integration/admin-auth.test.ts`, `backend/tests/integration/group-management.test.ts`, `backend/tests/integration/expense-management.test.ts`, `backend/tests/integration/balance-calculation.test.ts`, `backend/tests/integration/activity-logging.test.ts`
 
 ## Phase 3.6: Polish
-- [ ] T061 [P] Unit tests for validation rules in backend/tests/unit/validation.test.ts
-- [ ] T062 [P] Unit tests for balance calculation algorithms in backend/tests/unit/balance.test.ts
-- [ ] T063 Performance tests (<500ms response time)
-- [ ] T064 [P] Update API documentation based on contracts
-- [ ] T065 Run manual testing scenarios from quickstart.md
-- [ ] T066 Remove any code duplication
-- [ ] T067 Final deployment setup (Railway/Render/Heroku for backend, Netlify/Vercel for frontend)
+- [ ] T062 [P] Unit tests for validation rules in backend/tests/unit/validation.test.ts
+- [ ] T063 [P] Unit tests for balance calculation algorithms in backend/tests/unit/balance.test.ts
+- [ ] T064 Performance tests (<500ms response time)
+- [ ] T065 [P] Update API documentation based on contracts
+- [ ] T066 Run manual testing scenarios from quickstart.md
+- [ ] T067 Remove any code duplication
+- [ ] T068 Final deployment setup (Railway/Render/Heroku for backend, Netlify/Vercel for frontend)
 
 ## Dependencies
-- Tests (T007-T018) before implementation (T019-T055)
+- Tests (T007-T018) before implementation (T019-T056)
 - Models (T019-T024) before Services (T025-T030)
 - Services (T025-T030) before API Endpoints (T031-T036)
-- Backend API (T031-T036) before Frontend Services (T041-T046)
-- Frontend Services (T041-T046) before Frontend Components (T047-T055)
-- Implementation before polish (T061-T067)
+- Backend API (T031-T036) before Frontend Setup (T041)
+- Frontend Setup (T041) before Frontend Services (T041b-T046)
+- Frontend Services (T041b-T046) before Frontend Guards/Interceptors (T047)
+- Frontend Guards/Interceptors (T047) before Frontend Components (T048-T056)
+- Implementation before polish (T062-T068)
 
 ## Parallel Example
 ```
@@ -158,6 +223,14 @@ Task: "GroupMembership model in backend/src/models/GroupMembership.ts"
 Task: "Expense model in backend/src/models/Expense.ts"
 Task: "ExpenseSplit model in backend/src/models/ExpenseSplit.ts"
 Task: "ActivityLog model in backend/src/models/ActivityLog.ts"
+
+# Launch T041b-T046 together (frontend services after T041 setup):
+Task: "Auth service with signals in frontend/src/services/auth.service.ts"
+Task: "User service with signals in frontend/src/services/user.service.ts"
+Task: "Group service with signals in frontend/src/services/group.service.ts"
+Task: "Expense service with signals in frontend/src/services/expense.service.ts"
+Task: "Balance service with signals in frontend/src/services/balance.service.ts"
+Task: "Activity service with signals in frontend/src/services/activity.service.ts"
 ```
 
 ## Notes

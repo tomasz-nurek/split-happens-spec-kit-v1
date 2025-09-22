@@ -100,8 +100,10 @@ backend/
 frontend/
 ├── src/
 │   ├── components/
-│   ├── pages/
-│   └── services/
+│   ├── services/
+│   ├── guards/
+│   ├── interceptors/
+│   └── types/
 └── tests/
 ```
 
