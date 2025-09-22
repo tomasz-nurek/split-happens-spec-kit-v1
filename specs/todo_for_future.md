@@ -118,12 +118,61 @@ This document tracks critical improvements identified during code reviews that s
 
 **Impact:** High security risk, affects system availability and operational costs
 
+## 7. Validation Utilities Integration
+
+**Problem:** Centralized validation utilities (T038) created but not integrated into API endpoints - orphaned code.
+
+**Why Important:**
+- Code duplication: Each API endpoint has its own inline validation logic with inconsistent patterns
+- Maintainability: Validation rules scattered across multiple files make updates error-prone
+- Consistency: Different endpoints use different error messages and validation approaches for similar inputs
+- Testing: Inline validation harder to test comprehensively compared to isolated utility functions
+- Business rules: Validation logic not centralized means business rule changes require multiple file updates
+- Quality: Comprehensive validation utilities exist with 74 tests but remain unused
+
+**Current State:**
+- `backend/src/utils/validation.ts` - Complete validation library with extensive test coverage
+- `backend/tests/unit/validation.test.ts` - 74 passing tests covering all validation scenarios
+- API endpoints (`auth.ts`, `users.ts`, `groups.ts`, `expenses.ts`, `balances.ts`, `activity.ts`) still use inline validation
+
+**Specific Issues:**
+- **Code Duplication:** Name validation repeated in `users.ts` and `groups.ts` with slight differences
+- **Inconsistent Error Messages:** "Name is required" vs "Valid amount (positive number) is required" 
+- **Missing Validation:** Some endpoints lack comprehensive validation that exists in utilities
+- **Maintenance Burden:** Adding new validation rules requires updating multiple API files
+- **Testing Gaps:** Inline validation not as thoroughly tested as isolated utility functions
+
+**Required Integration:**
+```javascript
+// Replace inline validation like this in users.ts:
+if (!name || typeof name !== 'string' || name.trim() === '') {
+  return res.status(400).json({ error: 'Name is required' });
+}
+
+// With centralized validation:
+import { validateUserName, formatValidationErrors } from '../utils/validation';
+const nameValidation = validateUserName(name);
+if (!nameValidation.isValid) {
+  return res.status(400).json(formatValidationErrors(nameValidation));
+}
+```
+
+**Benefits of Integration:**
+- Consistent validation logic across all endpoints
+- Centralized business rule management
+- Better error message consistency
+- Reduced code duplication (removes ~50+ lines of validation code)
+- Leverages existing comprehensive test coverage
+- Easier to maintain and update validation rules
+
+**Impact:** Medium technical debt, affects code maintainability and consistency across all API endpoints
+
 ## Implementation Priorities
 
 1. **Phase 1 (Immediate - Security First):** Input sanitization, Rate limiting infrastructure
 2. **Phase 2 (Critical - Fix Integration):** Activity endpoint integration test failures
 3. **Phase 3 (Performance Critical):** Resource management, Activity endpoint pagination limits
-4. **Phase 4 (Architectural Improvement):** Dependency injection
+4. **Phase 4 (Architectural Improvement):** Dependency injection, Validation utilities integration
 5. **Phase 5 (Code Quality):** Balance endpoints improvements, Error message standardization
 
 ## Related Issues
@@ -131,12 +180,13 @@ This document tracks critical improvements identified during code reviews that s
 - Performance bottlenecks under concurrent load
 - Security vulnerabilities from user inputs and DoS attacks
 - Difficulty writing comprehensive unit tests
-- Code duplication in service instantiation patterns
+- Code duplication in service instantiation patterns and validation logic
 - Scalability limitations for future growth
 - Non-defensive programming patterns with potential runtime errors
-- Inconsistent error logging practices across endpoints
+- Inconsistent error logging and validation practices across endpoints
 - Missing comprehensive input validation and edge case testing
 - Integration test failures indicating broader system issues
 - Information disclosure through verbose error messages
 - Lack of database performance optimization (indexing, connection pooling)
 - No monitoring or alerting for unusual API usage patterns
+- Orphaned utility code not integrated into the application flow
