@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { ExpenseService, CreateExpenseRequest } from '../services/ExpenseService';
 import { GroupService } from '../services/GroupService';
 import { UserService } from '../services/UserService';
+import { validateId, validateAmount, validateExpenseDescription, validateIdArray, validateNoDuplicateIds, combineValidationResults, formatValidationErrors } from '../utils/validation';
 
 const router = Router();
 const expenseService = new ExpenseService();
@@ -16,8 +17,13 @@ const userService = new UserService();
 router.get('/groups/:id/expenses', requireAuth, async (req: Request, res: Response) => {
   try {
     const groupId = parseInt(req.params.id, 10);
-    if (isNaN(groupId) || groupId <= 0) {
-      return res.status(400).json({ error: 'Invalid group ID' });
+    
+    // Validate group ID parameter using centralized validation utilities
+    const groupIdValidation = validateId(groupId, 'Group ID');
+    
+    if (!groupIdValidation.isValid) {
+      const errorResponse = formatValidationErrors(groupIdValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.findById(groupId);
@@ -40,8 +46,13 @@ router.get('/groups/:id/expenses', requireAuth, async (req: Request, res: Respon
 router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Response) => {
   try {
     const groupId = parseInt(req.params.id, 10);
-    if (isNaN(groupId) || groupId <= 0) {
-      return res.status(400).json({ error: 'Invalid group ID' });
+    
+    // Validate group ID parameter using centralized validation utilities
+    const groupIdValidation = validateId(groupId, 'Group ID');
+    
+    if (!groupIdValidation.isValid) {
+      const errorResponse = formatValidationErrors(groupIdValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.findById(groupId);
@@ -51,21 +62,24 @@ router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Respo
 
     const { amount, description, paidBy, participantIds } = req.body || {};
 
-    // Validate required fields
-    if (amount === undefined || amount === null || typeof amount !== 'number' || amount <= 0) {
-      return res.status(400).json({ error: 'Valid amount (positive number) is required' });
-    }
-
-    if (!description || typeof description !== 'string' || description.trim() === '') {
-      return res.status(400).json({ error: 'Description is required' });
-    }
-
-    if (!paidBy || typeof paidBy !== 'number' || paidBy <= 0) {
-      return res.status(400).json({ error: 'Valid paidBy (user ID) is required' });
-    }
-
-    if (!Array.isArray(participantIds) || participantIds.length === 0) {
-      return res.status(400).json({ error: 'participantIds (non-empty array) is required' });
+    // Validate required fields using centralized validation utilities
+    const amountValidation = validateAmount(amount);
+    const descriptionValidation = validateExpenseDescription(description);
+    const paidByValidation = validateId(paidBy, 'Paid by user ID');
+    const participantIdsValidation = validateIdArray(participantIds, 'Participant IDs');
+    const noDuplicatesValidation = validateNoDuplicateIds(participantIds || [], 'Participant IDs');
+    
+    const validationResult = combineValidationResults(
+      amountValidation, 
+      descriptionValidation, 
+      paidByValidation, 
+      participantIdsValidation, 
+      noDuplicatesValidation
+    );
+    
+    if (!validationResult.isValid) {
+      const errorResponse = formatValidationErrors(validationResult);
+      return res.status(400).json(errorResponse);
     }
 
     // Validate that paidBy user exists
@@ -76,9 +90,6 @@ router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Respo
 
     // Validate that all participant users exist
     for (const participantId of participantIds) {
-      if (typeof participantId !== 'number' || participantId <= 0) {
-        return res.status(400).json({ error: 'All participantIds must be valid positive numbers' });
-      }
       const participant = await userService.findById(participantId);
       if (!participant) {
         return res.status(400).json({ error: `Participant user ${participantId} not found` });
@@ -108,8 +119,13 @@ router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Respo
 router.delete('/expenses/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const expenseId = parseInt(req.params.id, 10);
-    if (isNaN(expenseId) || expenseId <= 0) {
-      return res.status(400).json({ error: 'Invalid expense ID' });
+    
+    // Validate expense ID parameter using centralized validation utilities
+    const expenseIdValidation = validateId(expenseId, 'Expense ID');
+    
+    if (!expenseIdValidation.isValid) {
+      const errorResponse = formatValidationErrors(expenseIdValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const expense = await expenseService.findById(expenseId);

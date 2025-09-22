@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { GroupService } from '../services/GroupService';
 import { UserService } from '../services/UserService';
+import { validateGroupName, validateId, validateIdArray, formatValidationErrors, validateNoDuplicateIds, combineValidationResults } from '../utils/validation';
 
 const router = Router();
 const groupService = new GroupService();
@@ -29,8 +30,12 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { name } = req.body || {};
 
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({ error: 'Name is required' });
+    // Validate required fields using centralized validation utilities
+    const nameValidation = validateGroupName(name);
+    
+    if (!nameValidation.isValid) {
+      const errorResponse = formatValidationErrors(nameValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.create({ name: name.trim() });
@@ -48,8 +53,13 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: 'Invalid group ID' });
+    
+    // Validate ID parameter using centralized validation utilities
+    const idValidation = validateId(id, 'Group ID');
+    
+    if (!idValidation.isValid) {
+      const errorResponse = formatValidationErrors(idValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.findById(id);
@@ -72,8 +82,13 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
 router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: 'Invalid group ID' });
+    
+    // Validate ID parameter using centralized validation utilities
+    const idValidation = validateId(id, 'Group ID');
+    
+    if (!idValidation.isValid) {
+      const errorResponse = formatValidationErrors(idValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.findById(id);
@@ -96,8 +111,13 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 router.post('/:id/members', requireAuth, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: 'Invalid group ID' });
+    
+    // Validate group ID parameter using centralized validation utilities
+    const groupIdValidation = validateId(id, 'Group ID');
+    
+    if (!groupIdValidation.isValid) {
+      const errorResponse = formatValidationErrors(groupIdValidation);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.findById(id);
@@ -106,25 +126,20 @@ router.post('/:id/members', requireAuth, async (req: Request, res: Response) => 
     }
 
     const { userIds } = req.body || {};
-    if (!Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({ error: 'userIds (non-empty array) is required' });
-    }
-
-    // Parse and validate user IDs
-    const validUserIds: number[] = [];
-    for (const rawUserId of userIds) {
-      const userId = parseInt(rawUserId, 10);
-      if (!isNaN(userId) && userId > 0) {
-        validUserIds.push(userId);
-      }
-    }
-
-    if (validUserIds.length === 0) {
-      return res.status(400).json({ error: 'No valid user IDs provided' });
+    
+    // Validate userIds array using centralized validation utilities
+    const userIdsValidation = validateIdArray(userIds, 'User IDs');
+    const noDuplicatesValidation = validateNoDuplicateIds(userIds || [], 'User IDs');
+    
+    const validationResult = combineValidationResults(userIdsValidation, noDuplicatesValidation);
+    
+    if (!validationResult.isValid) {
+      const errorResponse = formatValidationErrors(validationResult);
+      return res.status(400).json(errorResponse);
     }
 
     // Batch validate user existence
-    const { valid: existingUserIds, invalid: invalidUserIds } = await userService.validateUserIds(validUserIds);
+    const { valid: existingUserIds, invalid: invalidUserIds } = await userService.validateUserIds(userIds);
     
     if (invalidUserIds.length > 0) {
       return res.status(400).json({ 
@@ -157,8 +172,16 @@ router.delete('/:id/members/:userId', requireAuth, async (req: Request, res: Res
   try {
     const groupId = parseInt(req.params.id, 10);
     const userId = parseInt(req.params.userId, 10);
-    if (isNaN(groupId) || groupId <= 0 || isNaN(userId) || userId <= 0) {
-      return res.status(400).json({ error: 'Invalid group or user ID' });
+    
+    // Validate ID parameters using centralized validation utilities
+    const groupIdValidation = validateId(groupId, 'Group ID');
+    const userIdValidation = validateId(userId, 'User ID');
+    
+    const validationResult = combineValidationResults(groupIdValidation, userIdValidation);
+    
+    if (!validationResult.isValid) {
+      const errorResponse = formatValidationErrors(validationResult);
+      return res.status(400).json(errorResponse);
     }
 
     const group = await groupService.findById(groupId);
