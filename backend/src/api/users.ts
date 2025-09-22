@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { UserService } from '../services/UserService';
 import { requireAuth } from '../middleware/auth';
+import { validateUserName, validateId, formatValidationErrors } from '../utils/validation';
 
 const router = Router();
 const userService = new UserService();
@@ -29,11 +30,12 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { name } = req.body;
 
-    // Validate required fields
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({ 
-        error: 'Name is required' 
-      });
+    // Validate required fields using centralized validation utilities
+    const nameValidation = validateUserName(name);
+    
+    if (!nameValidation.isValid) {
+      const errorResponse = formatValidationErrors(nameValidation);
+      return res.status(400).json(errorResponse);
     }
 
     // Create user
@@ -57,11 +59,12 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = parseInt(id, 10);
 
-    // Validate ID parameter
-    if (isNaN(userId) || userId <= 0) {
-      return res.status(400).json({ 
-        error: 'Invalid user ID' 
-      });
+    // Validate ID parameter using centralized validation utilities
+    const idValidation = validateId(userId, 'User ID');
+    
+    if (!idValidation.isValid) {
+      const errorResponse = formatValidationErrors(idValidation);
+      return res.status(400).json(errorResponse);
     }
 
     // Check if user exists

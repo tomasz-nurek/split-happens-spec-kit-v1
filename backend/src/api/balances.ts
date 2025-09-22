@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth';
 import { BalanceService } from '../services/BalanceService';
 import { GroupService } from '../services/GroupService';
 import { UserService } from '../services/UserService';
+import { validateId, formatValidationErrors } from '../utils/validation';
 
 // API response types matching the contract
 interface DebtRelationship {
@@ -44,8 +45,13 @@ const userService = new UserService();
 router.get('/groups/:id/balances', requireAuth, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: 'Invalid group ID' });
+    
+    // Validate group ID parameter using centralized validation utilities
+    const idValidation = validateId(id, 'Group ID');
+    
+    if (!idValidation.isValid) {
+      const errorResponse = formatValidationErrors(idValidation);
+      return res.status(400).json(errorResponse);
     }
 
     // Check if group exists
@@ -113,8 +119,13 @@ router.get('/groups/:id/balances', requireAuth, async (req: Request, res: Respon
 router.get('/users/:id/balance', requireAuth, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id) || id <= 0) {
-      return res.status(400).json({ error: 'Invalid user ID' });
+    
+    // Validate user ID parameter using centralized validation utilities
+    const idValidation = validateId(id, 'User ID');
+    
+    if (!idValidation.isValid) {
+      const errorResponse = formatValidationErrors(idValidation);
+      return res.status(400).json(errorResponse);
     }
 
     // Get user balance from service

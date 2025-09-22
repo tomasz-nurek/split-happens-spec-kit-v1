@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { AuthService, LoginCredentials } from '../services/AuthService';
+import { validateString, combineValidationResults, formatValidationErrors } from '../utils/validation';
 
 const router = Router();
 const authService = new AuthService();
@@ -12,11 +13,15 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const { username, password }: LoginCredentials = req.body;
 
-    // Validate required fields
-    if (!username || !password) {
-      return res.status(400).json({ 
-        error: 'Username and password are required' 
-      });
+    // Validate required fields using centralized validation utilities
+    const usernameValidation = validateString(username, 'Username', 1, 100);
+    const passwordValidation = validateString(password, 'Password', 1, 255);
+    
+    const validationResult = combineValidationResults(usernameValidation, passwordValidation);
+    
+    if (!validationResult.isValid) {
+      const errorResponse = formatValidationErrors(validationResult);
+      return res.status(400).json(errorResponse);
     }
 
     // Attempt login
