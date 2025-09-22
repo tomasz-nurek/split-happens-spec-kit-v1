@@ -6,6 +6,7 @@ import { groupsRouter } from './api/groups';
 import { expensesRouter } from './api/expenses';
 import { balancesRouter } from './api/balances';
 import { activityRouter } from './api/activity';
+import { errorHandler, notFoundHandler } from './middleware/error';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -25,6 +26,10 @@ app.use('/api', activityRouter);
 app.get('/', (req, res) => {
   res.send('Hello, world!');
 });
+
+// Error handling middleware (must be after all routes)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Export app for testing
 export { app };
