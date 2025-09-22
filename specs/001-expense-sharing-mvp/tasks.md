@@ -99,15 +99,15 @@
     - ID validation (positive integers, arrays, no duplicates)
     - Activity log validation (CREATE/DELETE actions, entity types)
     - Helper functions for combining results and formatting API errors
-- [ ] T038a Refactor API endpoints to use centralized validation utilities
-  - **REQUIREMENT**: Replace inline validation in API endpoints with centralized utilities:
-    - Update backend/src/api/auth.ts to use validation utilities for login credentials
-    - Update backend/src/api/users.ts to use validateUserName() instead of inline checks
-    - Update backend/src/api/groups.ts to use validateGroupName() and validateIdArray()
-    - Update backend/src/api/expenses.ts to use validateAmount(), validateExpenseDescription(), validateId() for comprehensive validation
-    - Update backend/src/api/balances.ts to use validateId() for parameter validation
-    - Ensure consistent error response formatting using formatValidationErrors()
-    - Remove duplicated validation logic and use combineValidationResults() for multiple checks
+- [x] T038a Refactor API endpoints to use centralized validation utilities
+  - ✅ **COMPLETED**: Replaced inline validation in API endpoints with centralized utilities:
+    - Updated backend/src/api/auth.ts to use validation utilities for login credentials
+    - Updated backend/src/api/users.ts to use validateUserName() instead of inline checks
+    - Updated backend/src/api/groups.ts to use validateGroupName() and validateIdArray()
+    - Updated backend/src/api/expenses.ts to use validateAmount(), validateExpenseDescription(), validateId() for comprehensive validation
+    - Updated backend/src/api/balances.ts to use validateId() for parameter validation
+    - Ensured consistent error response formatting using formatValidationErrors()
+    - Removed duplicated validation logic and used combineValidationResults() for multiple checks
 - [ ] T039 Error handling middleware in backend/src/middleware/error.ts
   - **REQUIREMENT**: Centralized Express error handling middleware that:
     - Catches unhandled errors from all routes
