@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/AuthService';
+import { AuthError } from './error';
+import { logger } from '../utils/logger';
 
 const authService = new AuthService();
 
@@ -20,21 +22,19 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     const token = authService.extractTokenFromHeader(authHeader);
 
     if (!token) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+      return next(new AuthError('Unauthorized'));
     }
 
     const isValid = await authService.isTokenValid(token);
     if (!isValid) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+      return next(new AuthError('Unauthorized'));
     }
 
     // Token is valid, proceed to next middleware/route handler
     next();
   } catch (error) {
-    console.error('Authentication middleware error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    logger.error('Authentication middleware error', error, { method: req.method, url: req.url, ip: req.ip });
+    next(error as Error);
   }
 };
 
@@ -69,7 +69,7 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     // Always proceed to next middleware/route handler
     next();
   } catch (error) {
-    console.error('Optional authentication middleware error:', error);
+    logger.warn('Optional authentication middleware error', { method: req.method, url: req.url, ip: req.ip });
     // Don't block the request on error, just proceed without user info
     next();
   }

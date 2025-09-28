@@ -1,9 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { ExpenseService, CreateExpenseRequest } from '../services/ExpenseService';
 import { GroupService } from '../services/GroupService';
 import { UserService } from '../services/UserService';
 import { validateId, validateAmount, validateExpenseDescription, validateIdArray, validateNoDuplicateIds, combineValidationResults, formatValidationErrors } from '../utils/validation';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/error';
 
 const router = Router();
 const expenseService = new ExpenseService();
@@ -14,8 +15,7 @@ const userService = new UserService();
  * GET /api/groups/:id/expenses
  * List all expenses for a group
  */
-router.get('/groups/:id/expenses', requireAuth, async (req: Request, res: Response) => {
-  try {
+router.get('/groups/:id/expenses', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const groupId = parseInt(req.params.id, 10);
     
     // Validate group ID parameter using centralized validation utilities
@@ -23,28 +23,23 @@ router.get('/groups/:id/expenses', requireAuth, async (req: Request, res: Respon
     
     if (!groupIdValidation.isValid) {
       const errorResponse = formatValidationErrors(groupIdValidation);
-      return res.status(400).json(errorResponse);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
     }
 
     const group = await groupService.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
+      return next(new NotFoundError('Group not found'));
     }
 
     const expenses = await expenseService.findByGroupId(groupId);
     return res.status(200).json(expenses);
-  } catch (error) {
-    console.error('Get expenses error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+}));
 
 /**
  * POST /api/groups/:id/expenses
  * Create a new expense for a group
  */
-router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Response) => {
-  try {
+router.post('/groups/:id/expenses', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const groupId = parseInt(req.params.id, 10);
     
     // Validate group ID parameter using centralized validation utilities
@@ -52,12 +47,12 @@ router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Respo
     
     if (!groupIdValidation.isValid) {
       const errorResponse = formatValidationErrors(groupIdValidation);
-      return res.status(400).json(errorResponse);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
     }
 
     const group = await groupService.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
+      return next(new NotFoundError('Group not found'));
     }
 
     const { amount, description, paidBy, participantIds } = req.body || {};
@@ -79,20 +74,20 @@ router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Respo
     
     if (!validationResult.isValid) {
       const errorResponse = formatValidationErrors(validationResult);
-      return res.status(400).json(errorResponse);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
     }
 
     // Validate that paidBy user exists
     const payer = await userService.findById(paidBy);
     if (!payer) {
-      return res.status(400).json({ error: 'Payer user not found' });
+      return next(new ValidationError('Payer user not found'));
     }
 
     // Validate that all participant users exist
     for (const participantId of participantIds) {
       const participant = await userService.findById(participantId);
       if (!participant) {
-        return res.status(400).json({ error: `Participant user ${participantId} not found` });
+        return next(new ValidationError(`Participant user ${participantId} not found`));
       }
     }
 
@@ -106,18 +101,13 @@ router.post('/groups/:id/expenses', requireAuth, async (req: Request, res: Respo
 
     const expense = await expenseService.create(groupId, expenseData);
     return res.status(201).json(expense);
-  } catch (error) {
-    console.error('Create expense error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+}));
 
 /**
  * DELETE /api/expenses/:id
  * Delete an expense
  */
-router.delete('/expenses/:id', requireAuth, async (req: Request, res: Response) => {
-  try {
+router.delete('/expenses/:id', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const expenseId = parseInt(req.params.id, 10);
     
     // Validate expense ID parameter using centralized validation utilities
@@ -125,20 +115,16 @@ router.delete('/expenses/:id', requireAuth, async (req: Request, res: Response) 
     
     if (!expenseIdValidation.isValid) {
       const errorResponse = formatValidationErrors(expenseIdValidation);
-      return res.status(400).json(errorResponse);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
     }
 
     const expense = await expenseService.findById(expenseId);
     if (!expense) {
-      return res.status(404).json({ error: 'Expense not found' });
+      return next(new NotFoundError('Expense not found'));
     }
 
     await expenseService.delete(expenseId);
     return res.status(200).json({ message: 'Expense deleted successfully' });
-  } catch (error) {
-    console.error('Delete expense error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+}));
 
 export { router as expensesRouter };
