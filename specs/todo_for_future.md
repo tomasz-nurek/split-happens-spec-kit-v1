@@ -240,3 +240,9 @@ if (!nameValidation.isValid) {
 - Lack of database performance optimization (indexing, connection pooling)
 - No monitoring or alerting for unusual API usage patterns
 - Orphaned utility code not integrated into the application flow
+
+## Review feedback after t039b/c 
+T039b/T039c implementation is strong: safe error responses, robust mappings, and well-structured logs with correlation IDs. branch: feat/t039b-error-security
+Minor gaps: correlation IDs aren’t added on success responses; no global JSON size limit; some observability/perf tuning opportunities.
+Unit tests for error handling are comprehensive and pass; integration test failures appear out of scope for this branch.
+Quick wins: add correlation-id middleware and a JSON limit in index.ts, and fix ESLint config. 

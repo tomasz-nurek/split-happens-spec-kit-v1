@@ -1,9 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { BalanceService } from '../services/BalanceService';
 import { GroupService } from '../services/GroupService';
 import { UserService } from '../services/UserService';
 import { validateId, formatValidationErrors } from '../utils/validation';
+import { asyncHandler, ValidationError, NotFoundError } from '../middleware/error';
 
 // API response types matching the contract
 interface DebtRelationship {
@@ -42,8 +43,7 @@ const userService = new UserService();
  * GET /api/groups/:id/balances
  * Get balance information for all users in a group
  */
-router.get('/groups/:id/balances', requireAuth, async (req: Request, res: Response) => {
-  try {
+router.get('/groups/:id/balances', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params.id, 10);
     
     // Validate group ID parameter using centralized validation utilities
@@ -51,13 +51,13 @@ router.get('/groups/:id/balances', requireAuth, async (req: Request, res: Respon
     
     if (!idValidation.isValid) {
       const errorResponse = formatValidationErrors(idValidation);
-      return res.status(400).json(errorResponse);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
     }
 
     // Check if group exists
     const group = await groupService.findById(id);
     if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
+      return next(new NotFoundError('Group not found'));
     }
 
     // Get balance summary from service
@@ -106,18 +106,13 @@ router.get('/groups/:id/balances', requireAuth, async (req: Request, res: Respon
     });
 
     return res.status(200).json(groupBalances);
-  } catch (error) {
-    console.error('Get group balances error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+}));
 
 /**
  * GET /api/users/:id/balance
  * Get overall balance across all groups for a user
  */
-router.get('/users/:id/balance', requireAuth, async (req: Request, res: Response) => {
-  try {
+router.get('/users/:id/balance', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params.id, 10);
     
     // Validate user ID parameter using centralized validation utilities
@@ -125,13 +120,13 @@ router.get('/users/:id/balance', requireAuth, async (req: Request, res: Response
     
     if (!idValidation.isValid) {
       const errorResponse = formatValidationErrors(idValidation);
-      return res.status(400).json(errorResponse);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
     }
 
     // Get user balance from service
     const userBalance = await balanceService.getUserOverallBalance(id);
     if (!userBalance) {
-      return res.status(404).json({ error: 'User not found' });
+      return next(new NotFoundError('User not found'));
     }
 
     // Transform to API contract format
@@ -147,10 +142,6 @@ router.get('/users/:id/balance', requireAuth, async (req: Request, res: Response
     };
 
     return res.status(200).json(response);
-  } catch (error) {
-    console.error('Get user balance error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+}));
 
 export { router as balancesRouter };

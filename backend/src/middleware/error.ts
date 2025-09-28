@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { logger, genCorrelationId } from '../utils/logger';
 
 /**
  * Custom error classes for consistent error handling
@@ -55,13 +56,15 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  // Log error details
+  // Correlation id from header or generate new
+  const correlationId = (req.headers['x-correlation-id'] as string) || genCorrelationId();
+  // Basic request context (avoid user-agent to reduce PII)
   const logContext = {
+    correlationId,
     method: req.method,
     url: req.url,
-    userAgent: req.get('User-Agent') || 'unknown',
-    timestamp: new Date().toISOString()
-  };
+    ip: req.ip,
+  } as const;
 
   let statusCode = 500;
   let errorMessage = 'Internal server error';
@@ -70,30 +73,27 @@ export const errorHandler = (
   switch (error.name) {
     case 'ValidationError':
       statusCode = 400;
-      errorMessage = error.message;
-      console.log(`[${logContext.timestamp}] Validation Error (${logContext.method} ${logContext.url}):`, error.message);
+      // Sanitize: don't echo raw details, provide concise message
+      errorMessage = 'Validation error';
+      logger.info('Validation error', { ...logContext, statusCode });
       break;
 
     case 'AuthError':
       statusCode = 401;
-      errorMessage = error.message;
-      console.log(`[${logContext.timestamp}] Auth Error (${logContext.method} ${logContext.url}):`, error.message);
+      errorMessage = 'Unauthorized';
+      logger.info('Auth error', { ...logContext, statusCode });
       break;
 
     case 'NotFoundError':
       statusCode = 404;
-      errorMessage = error.message;
-      console.log(`[${logContext.timestamp}] Not Found (${logContext.method} ${logContext.url}):`, error.message);
+      errorMessage = 'Not found';
+      logger.info('Not found', { ...logContext, statusCode });
       break;
 
     case 'DatabaseError':
       statusCode = 500;
       errorMessage = 'Database operation failed';
-      console.error(`[${logContext.timestamp}] Database Error (${logContext.method} ${logContext.url}):`, {
-        message: error.message,
-        originalError: (error as DatabaseError).originalError?.message,
-        stack: error.stack
-      });
+      logger.error('Database error', error, { ...logContext, statusCode });
       break;
 
     case 'SyntaxError':
@@ -101,39 +101,40 @@ export const errorHandler = (
       if (error.message.includes('JSON')) {
         statusCode = 400;
         errorMessage = 'Invalid JSON in request body';
-        console.log(`[${logContext.timestamp}] JSON Parse Error (${logContext.method} ${logContext.url}):`, error.message);
+        logger.info('JSON parse error', { ...logContext, statusCode });
       } else {
         statusCode = 500;
         errorMessage = 'Internal server error';
-        console.error(`[${logContext.timestamp}] Syntax Error (${logContext.method} ${logContext.url}):`, {
-          message: error.message,
-          stack: error.stack
-        });
+        logger.error('Syntax error', error, { ...logContext, statusCode });
       }
       break;
 
-    default:
-      // Handle unknown errors - log full details for debugging
-      console.error(`[${logContext.timestamp}] Unhandled Error (${logContext.method} ${logContext.url}):`, {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        userAgent: logContext.userAgent
-      });
+    // Payload too large from body parser
+    case 'PayloadTooLargeError':
+      statusCode = 413;
+      errorMessage = 'Payload too large';
+      logger.warn('Payload too large', { ...logContext, statusCode });
+      break;
 
-      // In production, don't expose internal error details
-      if (process.env.NODE_ENV === 'production') {
-        errorMessage = 'Internal server error';
-      } else {
-        errorMessage = error.message || 'Internal server error';
+    default:
+      // Detect body-parser style error objects that don't set name properly
+      const anyErr: any = error as any;
+      if (anyErr && (anyErr.type === 'entity.too.large' || anyErr.statusCode === 413 || anyErr.status === 413)) {
+        statusCode = 413;
+        errorMessage = 'Payload too large';
+        logger.warn('Payload too large', { ...logContext, statusCode });
+        break;
       }
+      // Handle unknown errors - log full details for debugging
+      logger.error('Unhandled error', error, { ...logContext, statusCode });
+      // Do not expose internals in any environment
+      errorMessage = 'Internal server error';
       break;
   }
 
   // Send consistent error response format per API contracts
-  res.status(statusCode).json({
-    error: errorMessage
-  });
+  res.setHeader('x-correlation-id', correlationId);
+  res.status(statusCode).json({ error: errorMessage });
 };
 
 /**
@@ -151,7 +152,7 @@ export const notFoundHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  const error = new NotFoundError(`Route ${req.method} ${req.url} not found`);
+  const error = new NotFoundError('Route not found');
   next(error);
 };
 
