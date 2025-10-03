@@ -26,6 +26,19 @@ const config = {
     seeds: {
       directory: './src/database/seeds'
     }
+  },
+  production: {
+    client: 'better-sqlite3',
+    connection: {
+      filename: path.resolve(__dirname, 'dev.sqlite3')
+    },
+    useNullAsDefault: true,
+    migrations: {
+      directory: './src/database/migrations'
+    },
+    seeds: {
+      directory: './src/database/seeds'
+    }
   }
 };
 

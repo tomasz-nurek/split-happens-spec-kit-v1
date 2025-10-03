@@ -139,7 +139,7 @@
     - Ensured unknown errors are sanitized and logged with ERROR severity
     - Asserted structured logging shape (no user-agent, with correlationId)
     - High coverage for middleware and utilities
-- [ ] T040 Database connection and setup in backend/src/database/index.ts
+- [x] T040 Database connection and setup in backend/src/database/index.ts
   - **REQUIREMENT**: Enhanced database initialization and connection management:
     - Initialize knex instance with proper environment configuration (dev/test/production)
     - Add automatic migration runner on application startup using `knex.migrate.latest()`
