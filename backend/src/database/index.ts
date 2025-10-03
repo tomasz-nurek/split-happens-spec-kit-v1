@@ -113,11 +113,15 @@ export async function healthCheck(throwOnFail = false): Promise<{ ok: true } | {
 		// For SQLite, a simple select 1 works
 		await db!.raw('select 1 as ok');
 		return { ok: true } as const;
-	} catch (err: any) {
+	} catch (err: unknown) {
 		if (throwOnFail) {
 			throw new DatabaseError('Database health check failed', err as Error);
 		}
-		return { ok: false, error: err?.message || 'unknown error' } as const;
+		let errorMessage = 'unknown error';
+		if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+			errorMessage = (err as { message: string }).message;
+		}
+		return { ok: false, error: errorMessage } as const;
 	}
 }
 
