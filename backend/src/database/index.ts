@@ -23,7 +23,7 @@ function resolveEnv(): EnvName {
 	return 'development';
 }
 
-function ensureSqliteFileIfNeeded(config: any) {
+function ensureSqliteFileIfNeeded(config: Knex.Config) {
 	// For SQLite, ensure the database file exists before connecting
 	if (config && (config.client === 'sqlite3' || config.client === 'better-sqlite3')) {
 		const filename = config.connection?.filename as string | undefined;
