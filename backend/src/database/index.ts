@@ -14,7 +14,7 @@ let initialized = false;
 let initPromise: Promise<void> | null = null;
 
 function resolveEnv(): EnvName {
-	const rawEnv = process.env.NODE_ENV as EnvName | undefined;
+    const rawEnv = process.env.NODE_ENV as EnvName | undefined;
 	if (rawEnv === 'test') return 'test';
 	if (rawEnv === 'development' || rawEnv === 'production') return rawEnv;
 	// Detect Vitest context
