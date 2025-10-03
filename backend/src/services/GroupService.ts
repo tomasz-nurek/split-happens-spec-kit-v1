@@ -1,8 +1,8 @@
-import db from '../database';
+import { getDb } from '../database';
 import { Group } from '../models/Group';
 
 export class GroupService {
-  private db = db;
+  private db = getDb();
 
   async create(group: Omit<Group, 'id' | 'created_at'>): Promise<Group> {
     const [id] = await this.db('groups').insert(group);

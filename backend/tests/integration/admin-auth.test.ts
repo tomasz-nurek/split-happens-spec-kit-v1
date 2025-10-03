@@ -2,7 +2,7 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
-import db from '../../src/database';
+import { getDb, closeDatabase } from '../../src/database';
 
 describe('Admin Login Flow Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
   let authService: AuthService;
@@ -13,7 +13,8 @@ describe('Admin Login Flow Integration Test (per specs/001-expense-sharing-mvp/q
     // Setup test database with migration lock handling
 
     // Handle migration locks that can occur in concurrent test runs
-    let retries = 3;
+  const db = getDb();
+  let retries = 3;
     while (retries > 0) {
       try {
         await db.migrate.rollback(undefined, true); // Rollback all migrations first
@@ -37,7 +38,7 @@ describe('Admin Login Flow Integration Test (per specs/001-expense-sharing-mvp/q
 
   afterAll(async () => {
     // Clean up test database
-    await db.destroy();
+  await closeDatabase();
   });
 
   describe('Complete Admin Login Flow', () => {

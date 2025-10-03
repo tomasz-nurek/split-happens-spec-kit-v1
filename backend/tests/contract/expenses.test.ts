@@ -2,7 +2,7 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
-import db from '../../src/database';
+import { getDb, closeDatabase } from '../../src/database';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 describe('Expenses API contract (per specs/001-expense-sharing-mvp/contracts/expenses.yaml)', () => {
@@ -13,7 +13,8 @@ describe('Expenses API contract (per specs/001-expense-sharing-mvp/contracts/exp
     authService = new AuthService();
 
     // Setup test DB and migrations (handle possible lock)
-    let retries = 3;
+  const db = getDb();
+  let retries = 3;
     let delay = 50; // ms, exponential backoff
     while (retries > 0) {
       try {
@@ -44,7 +45,7 @@ describe('Expenses API contract (per specs/001-expense-sharing-mvp/contracts/exp
   });
 
   afterAll(async () => {
-    await db.destroy();
+  await closeDatabase();
   });
 
   describe('GET /api/groups/:id/expenses', () => {

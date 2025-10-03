@@ -81,15 +81,7 @@ export async function initDatabase(): Promise<void> {
 			logger.info('Database initialized');
 		} catch (err) {
 			logger.error('Database initialization failed', err as Error);
-			// Ensure we close the connection if init failed
-			try {
-				if (db) await db.destroy();
-			} catch (_) {
-				// ignore
-			}
-			db = null;
-			initialized = false;
-			initPromise = null;
+			await internalReset();
 			throw new DatabaseError('Database initialization failed', err as Error);
 		}
 	})();
@@ -133,10 +125,35 @@ export function getDb(): Knex {
 		const env = resolveEnv();
 		const config = knexConfig[env];
 		ensureSqliteFileIfNeeded(config);
+		// Do not mark initialized here; this is a lazy accessor (tests may manage migrations)
 		db = knex(config);
 	}
-	return db!;
+	return db;
 }
 
-// Backwards-compatible default export used across services
-export default getDb();
+/**
+ * Internal reset helper – destroys current connection (if any) and clears flags.
+ * Always swallow destroy errors to avoid masking original problems.
+ */
+async function internalReset() {
+	try {
+		if (db) await db.destroy();
+	} catch (_) {
+		// ignore
+	}
+	db = null;
+	initialized = false;
+	initPromise = null;
+}
+
+/**
+ * Public helper to explicitly close and reset the database layer.
+ * Use in test teardown or graceful shutdown. Subsequent initDatabase() calls
+ * will perform a fresh initialization.
+ */
+export async function closeDatabase(): Promise<void> {
+	await internalReset();
+}
+
+// Backwards-compatible default export kept as a function (NOT the instance) to avoid frozen destroyed connection.
+export default getDb;
