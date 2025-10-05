@@ -95,12 +95,14 @@ export async function initDatabase(): Promise<void> {
  */
 export async function healthCheck(throwOnFail = false): Promise<{ ok: true } | { ok: false; error: string }> {
 	try {
-		// Ensure knex is created; do not auto-init here to avoid implicit migrations in tests
+		// Do NOT create a new connection here. A health check should reflect current state.
+		// If the connection was explicitly closed (e.g. via closeDatabase in tests/teardown),
+		// we want healthCheck(true) to surface that as a failure instead of silently rehydrating.
 		if (!db) {
-			const env = resolveEnv();
-			const config = knexConfig[env];
-			ensureSqliteFileIfNeeded(config);
-			db = knex(config);
+			if (throwOnFail) {
+				throw new DatabaseError('Database not initialized');
+			}
+			return { ok: false, error: 'not initialized' } as const;
 		}
 		// For SQLite, a simple select 1 works
 		await db!.raw('select 1 as ok');
