@@ -73,23 +73,9 @@ export function serializeExpense(expense: any, splits?: any[]): ExpenseDTO {
   (dto as any).paid_by = dto.paidBy;
   if (splits && splits.length) {
       const total = splits.reduce((acc, s) => acc + Number(s.amount), 0) || 0;
-      // Uniform percentage base (e.g., 33.33) distributing remainder on last entries if needed to sum to 100
-      const count = splits.length;
-      const rawPct = count > 0 ? 100 / count : 0; // e.g., 33.333333
-      const basePct = Number(rawPct.toFixed(2));
-      let accumulated = 0;
-      const percentages: number[] = [];
-      for (let i = 0; i < count; i++) {
-        if (i < count - 1) {
-          percentages.push(basePct);
-          accumulated += basePct;
-        } else {
-          // Last one gets remainder to ensure exact 100.00
-          const last = Number((100 - accumulated).toFixed(2));
-          percentages.push(last);
-        }
-      }
-      dto.splits = splits.map((s, idx) => {
+      // NOTE: Removed unused pre-distribution equal percentage calculation. We now derive the
+      // percentage strictly from actual share amounts to avoid mismatch / dead code.
+      dto.splits = splits.map((s) => {
         const obj: any = {
           userId: s.user_id ?? s.userId,
           amount: Number(Number(s.amount).toFixed(2)),
@@ -180,26 +166,51 @@ export function serializeActivity(row: any): ActivityDTO {
 
   // Flatten commonly expected fields from metadata
   if (parsedDetails) {
-    if (parsedDetails.userId) dto.userId = parsedDetails.userId;
-    if (parsedDetails.userName) dto.userName = parsedDetails.userName;
-    if (parsedDetails.groupId) dto.groupId = parsedDetails.groupId;
-    if (parsedDetails.groupName) dto.groupName = parsedDetails.groupName;
-    if (parsedDetails.expenseId) dto.expenseId = parsedDetails.expenseId;
-    if (parsedDetails.description) dto.expenseDescription = parsedDetails.description;
-    if (parsedDetails.amount !== undefined) dto.amount = Number(Number(parsedDetails.amount).toFixed(2));
-    // Flatten added/removed / paidBy semantics
-    if (parsedDetails.addedUserId) {
-      dto.userId = parsedDetails.addedUserId;
-      if (parsedDetails.addedUserName) dto.userName = parsedDetails.addedUserName;
+    // Allowlist of metadata keys we consider safe to surface / flatten
+    const ALLOWED_FLATTEN: Record<string, (val: any) => any> = {
+      userId: v => v,
+      userName: v => v,
+      groupId: v => v,
+      groupName: v => v,
+      expenseId: v => v,
+      description: v => v, // used to derive expenseDescription
+      amount: v => Number(Number(v).toFixed(2)),
+      addedUserId: v => v,
+      addedUserName: v => v,
+      removedUserId: v => v,
+      removedUserName: v => v,
+      paidBy: v => v,
+      paidByName: v => v,
+    };
+
+    // Flatten with precedence rules similar to previous logic but constrained to allowlist
+    for (const key of Object.keys(ALLOWED_FLATTEN)) {
+      if (parsedDetails[key] !== undefined) {
+        const value = ALLOWED_FLATTEN[key](parsedDetails[key]);
+        switch (key) {
+          case 'userId': dto.userId = value; break;
+          case 'userName': dto.userName = value; break;
+          case 'groupId': dto.groupId = value; break;
+          case 'groupName': dto.groupName = value; break;
+          case 'expenseId': dto.expenseId = value; break;
+          case 'description': dto.expenseDescription = value; break;
+          case 'amount': dto.amount = value; break;
+          case 'addedUserId': dto.userId = value; break;
+          case 'addedUserName': dto.userName = value; break;
+          case 'removedUserId': dto.userId = value; break;
+          case 'removedUserName': dto.userName = value; break;
+          case 'paidBy': dto.userId = value; break;
+          case 'paidByName': dto.userName = value; break;
+        }
+      }
     }
-    if (parsedDetails.removedUserId) {
-      dto.userId = parsedDetails.removedUserId;
-      if (parsedDetails.removedUserName) dto.userName = parsedDetails.removedUserName;
+
+    // Sanitize metadata: retain only allowed keys so we don't leak future internal fields
+    const sanitized: Record<string, any> = {};
+    for (const key of Object.keys(ALLOWED_FLATTEN)) {
+      if (parsedDetails[key] !== undefined) sanitized[key] = parsedDetails[key];
     }
-    if (parsedDetails.paidBy) {
-      dto.userId = parsedDetails.paidBy;
-      if (parsedDetails.paidByName) dto.userName = parsedDetails.paidByName;
-    }
+    dto.metadata = sanitized;
   }
   return dto;
 }

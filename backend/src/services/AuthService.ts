@@ -40,6 +40,21 @@ export class AuthService {
     if (!process.env.JWT_SECRET) {
       console.warn('Warning: JWT_SECRET not set in environment variables');
     }
+
+    // Production hardening: refuse to start with unsafe defaults.
+    // We only enforce for NODE_ENV === 'production' to keep DX for tests/local.
+    if (process.env.NODE_ENV === 'production') {
+      if (!process.env.JWT_SECRET) {
+        throw new Error('SECURITY: Missing JWT_SECRET in production environment');
+      }
+      const weakPasswords = ['password123', 'admin', 'changeme'];
+      if (weakPasswords.includes(this.adminPassword)) {
+        throw new Error('SECURITY: Weak default ADMIN_PASSWORD in production. Set a strong ADMIN_PASSWORD env var.');
+      }
+      if (this.jwtSecret === 'fallback_secret_key') {
+        throw new Error('SECURITY: Using fallback JWT secret in production. Set JWT_SECRET.');
+      }
+    }
   }
 
   /**
