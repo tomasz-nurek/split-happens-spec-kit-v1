@@ -30,7 +30,7 @@ const config = {
   production: {
     client: 'better-sqlite3',
     connection: {
-      filename: path.resolve(__dirname, 'dev.sqlite3')
+      filename: path.resolve(__dirname, 'prod.sqlite3')
     },
     useNullAsDefault: true,
     migrations: {
