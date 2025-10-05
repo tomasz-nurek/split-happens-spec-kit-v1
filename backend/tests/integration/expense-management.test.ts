@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
-import db from '../../src/database';
+import { getDb, closeDatabase } from '../../src/database';
 
 describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
 
@@ -11,6 +11,7 @@ describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp
     // Handle migration locks that can occur in concurrent test runs
     let retries = 3;
     while (retries > 0) {
+      const db = getDb();
       try {
         await db.migrate.rollback(undefined, true); // Rollback all migrations first
         await db.migrate.latest();
@@ -33,7 +34,7 @@ describe('Expense Management Integration Test (per specs/001-expense-sharing-mvp
 
   afterAll(async () => {
     // Clean up test database
-    await db.destroy();
+  await closeDatabase();
   });
 
   describe('Complete Expense Creation and Splitting Flow', () => {

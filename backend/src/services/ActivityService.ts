@@ -1,8 +1,8 @@
-import db from '../database';
+import { getDb } from '../database';
 import { ActivityLog, ActivityAction, ActivityEntityType } from '../models/ActivityLog';
 
 export class ActivityService {
-  private db = db;
+  private db = getDb();
 
   async create(activity: Omit<ActivityLog, 'id' | 'created_at'>): Promise<ActivityLog> {
     const [id] = await this.db('activity_log').insert(activity);

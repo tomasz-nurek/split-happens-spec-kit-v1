@@ -1,4 +1,4 @@
-import db from '../database';
+import { getDb } from '../database';
 import { Expense } from '../models/Expense';
 import { ExpenseSplit } from '../models/ExpenseSplit';
 import { ActivityService } from './ActivityService';
@@ -16,7 +16,7 @@ export interface CreateExpenseRequest {
 }
 
 export class ExpenseService {
-  private db = db;
+  private db = getDb();
   private activityService = new ActivityService();
 
   async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseWithSplits> {

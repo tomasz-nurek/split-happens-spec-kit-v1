@@ -2,7 +2,7 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
-import db from '../../src/database';
+import { getDb, closeDatabase } from '../../src/database';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 describe('Groups API contract (per specs/001-expense-sharing-mvp/contracts/groups.yaml)', () => {
@@ -13,9 +13,10 @@ describe('Groups API contract (per specs/001-expense-sharing-mvp/contracts/group
     authService = new AuthService();
 
     // Setup test DB and migrations (handle possible lock)
-  let retries = 3;
-  let delay = 50; // ms, exponential backoff
+    let retries = 3;
+    let delay = 50; // ms, exponential backoff
     while (retries > 0) {
+      const db = getDb();
       try {
         await db.migrate.rollback(undefined, true);
         await db.migrate.latest();
@@ -24,8 +25,8 @@ describe('Groups API contract (per specs/001-expense-sharing-mvp/contracts/group
         if (error.message && error.message.includes('Migration table is already locked')) {
           retries--;
           if (retries > 0) {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 250);
+            await sleep(delay);
+            delay = Math.min(delay * 2, 250);
           } else {
             throw error;
           }
@@ -44,7 +45,7 @@ describe('Groups API contract (per specs/001-expense-sharing-mvp/contracts/group
   });
 
   afterAll(async () => {
-    await db.destroy();
+  await closeDatabase();
   });
 
   describe('GET /api/groups', () => {

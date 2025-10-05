@@ -1,4 +1,4 @@
-import db from '../database';
+import { getDb } from '../database';
 import { User } from '../models/User';
 import { Group } from '../models/Group';
 
@@ -59,7 +59,7 @@ export interface UserOverallBalance {
 }
 
 export class BalanceService {
-  private db = db;
+  private db = getDb();
 
   /**
    * Calculates the balance of each member in a given group and provides a

@@ -139,7 +139,7 @@
     - Ensured unknown errors are sanitized and logged with ERROR severity
     - Asserted structured logging shape (no user-agent, with correlationId)
     - High coverage for middleware and utilities
-- [ ] T040 Database connection and setup in backend/src/database/index.ts
+- [x] T040 Database connection and setup in backend/src/database/index.ts
   - **REQUIREMENT**: Enhanced database initialization and connection management:
     - Initialize knex instance with proper environment configuration (dev/test/production)
     - Add automatic migration runner on application startup using `knex.migrate.latest()`
@@ -149,6 +149,34 @@
     - Add database connection logging for debugging
     - Ensure migrations run before any API endpoints are available
     - Handle database file creation for SQLite if it doesn't exist
+
+### Backend Response & Integration Hardening (Follow-up) 
+- [ ] T040B Introduce response shaping layer and fix integration test gaps (multi-part)
+  - **Context**: Current failing integration tests (activity logging, admin auth verify payload, balance calculation, group management) show mismatches between DB row shapes (snake_case, raw relations) and expected API contracts (camelCase, nested structures, computed fields). Also admin verify endpoint lacks `user` object; activity endpoints lack `activities` wrapper; group/balance endpoints return 404 due to missing seed/admin state.
+  - **Subtasks (execute sequentially unless marked [P]):**
+    1. Serializer Utilities: `backend/src/utils/serializers.ts` — map DB models (snake_case) to API DTOs (camelCase, expand splits with percentages). [P]
+    2. Expense Serialization Integration: Refactor `backend/src/services/ExpenseService.ts` to return serialized expense DTO(s) using new utilities (keep raw layer internal).
+    3. Balance DTO & Calculation Shape: Update `backend/src/services/BalanceService.ts` to emit balances object `{ groupId, balances:[{ userId,userName, owes:{}, owed:{}, balance }], settlements:[] }` matching tests; map internal arrays (owed_by / owes) to object maps.
+    4. Activity Feed Wrappers: Adjust `backend/src/api/activity.ts` (and if needed `ActivityService`) to wrap results as `{ activities:[...] }` and serialize each item (camelCase, metadata flattening) per tests.
+    5. Admin Verify Payload: Modify auth verify handler in `backend/src/api/auth.ts` to include `{ valid:true, user:{ id, name, isAdmin } }` when token valid.
+    6. Seed Helper for Integration Tests: Create `backend/tests/support/testSeed.ts` adding functions to ensure admin user existence and optionally seed sample users/groups; integrate into integration test setup blocks. [P]
+    7. Update Integration Tests: Adjust failing integration test expectations ONLY if serializer changes require (prefer aligning code to existing expectations first). Target files: `backend/tests/integration/admin-auth.test.ts`, `group-management.test.ts`, `balance-calculation.test.ts`, `activity-logging.test.ts`.
+    8. Add Unit Tests for Serializers: New file `backend/tests/unit/serializers.test.ts` covering snake_case→camelCase, expense with splits, balance mapping, activity item mapping. [P]
+    9. Regression Test for healthCheck Non-Rehydration: Extend `backend/tests/unit/database.test.ts` to assert `{ ok:false }` when DB closed without throwOnFail.
+    10. Logging Consistency: Ensure serialization layer doesn’t leak internal column names in logs (spot-check; adjust logger usage). [P]
+  - **Acceptance Criteria**:
+    - All previously failing unit test file (`database.test.ts`) remains green.
+    - Admin verify returns user object; tests expecting it pass.
+    - Expense creation responses include camelCase with `splits` using `userId`, `amount`, `percentage` (if required by tests) OR tests updated if spec pivoted.
+    - Balance endpoints return contract shape (no snake_case, maps not arrays for owes/owed where required by tests).
+    - Activity endpoints return `{ activities: [...] }` and each activity includes expected metadata fields.
+    - No introduction of additional failing test files; overall failing count reduced relative to baseline (goal: all green or only pre-existing unrelated failures documented).
+    - Serializers isolated and unit-tested; easy extension for future fields.
+  - **Dependencies**: Runs after T040. Subtasks 1 must precede 2–5. Seed helper (6) precedes any test updates (7). Serializers tests (8) after serializer implementation.
+  - **Parallel Guidance**:
+    - Can parallelize (1), (6), (8), (10) after creating stub interfaces.
+    - Keep (2)-(5) sequential to avoid merge conflicts in services/API.
+    - Run full test suite after (5), after (7), and final after (10).
 
 ## Phase 3.4: Frontend Implementation
 

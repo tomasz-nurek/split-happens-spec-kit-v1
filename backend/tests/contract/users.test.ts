@@ -2,7 +2,7 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/index';
 import { AuthService } from '../../src/services/AuthService';
-import db from '../../src/database';
+import { getDb, closeDatabase } from '../../src/database';
 
 describe('Users API contract (per specs/001-expense-sharing-mvp/contracts/users.yaml)', () => {
   let authService: AuthService;
@@ -16,6 +16,7 @@ describe('Users API contract (per specs/001-expense-sharing-mvp/contracts/users.
     // Handle migration locks that can occur in concurrent test runs
     let retries = 3;
     while (retries > 0) {
+      const db = getDb();
       try {
         await db.migrate.rollback(undefined, true); // Rollback all migrations first
         await db.migrate.latest();
@@ -45,7 +46,7 @@ describe('Users API contract (per specs/001-expense-sharing-mvp/contracts/users.
 
   afterAll(async () => {
     // Clean up test database
-    await db.destroy();
+  await closeDatabase();
   });
 
   describe('GET /api/users', () => {
