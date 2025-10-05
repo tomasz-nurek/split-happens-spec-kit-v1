@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService, LoginCredentials } from '../services/AuthService';
 import { validateString, combineValidationResults, formatValidationErrors } from '../utils/validation';
 import { asyncHandler, ValidationError, AuthError } from '../middleware/error';
+import { serializeUser } from '../utils/serializers';
 
 const router = Router();
 const authService = new AuthService();
@@ -79,8 +80,11 @@ router.get('/verify', asyncHandler(async (req: Request, res: Response, next: Nex
       return next(new AuthError('Invalid token'));
     }
 
+  // Build minimal user object (single admin user for MVP)
+  const user = serializeUser({ id: 1, name: 'Admin User', role: payload.role });
     return res.status(200).json({ 
-      valid: true 
+      valid: true,
+      user
     });
 }));
 

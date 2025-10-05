@@ -35,41 +35,24 @@ describe('Balances API contract (per specs/001-expense-sharing-mvp/contracts/bal
       );
     });
 
-    it('returns 200 with group balances array when valid', async () => {
+    it('returns 200 with group balances object when valid', async () => {
       const res = await request(app)
         .get('/api/groups/1/balances')
         .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0]).toEqual(
-          expect.objectContaining({
-            user_id: expect.any(Number),
-            user_name: expect.any(String),
-            balance: expect.any(Number),
-            owes: expect.any(Array),
-            owed_by: expect.any(Array)
-          })
-        );
-        // Check debt relationship structure if present
-        if (res.body[0].owes.length > 0) {
-          expect(res.body[0].owes[0]).toEqual(
-            expect.objectContaining({
-              user_id: expect.any(Number),
-              user_name: expect.any(String),
-              amount: expect.any(Number)
-            })
-          );
-        }
-        if (res.body[0].owed_by.length > 0) {
-          expect(res.body[0].owed_by[0]).toEqual(
-            expect.objectContaining({
-              user_id: expect.any(Number),
-              user_name: expect.any(String),
-              amount: expect.any(Number)
-            })
-          );
-        }
+      expect(res.body).toEqual(expect.objectContaining({
+        groupId: expect.any(Number),
+        balances: expect.any(Array),
+        settlements: expect.any(Array)
+      }));
+      if (res.body.balances.length > 0) {
+        expect(res.body.balances[0]).toEqual(expect.objectContaining({
+          userId: expect.any(Number),
+          userName: expect.any(String),
+          balance: expect.any(Number),
+          owes: expect.any(Object),
+          owed: expect.any(Object)
+        }));
       }
     });
   });

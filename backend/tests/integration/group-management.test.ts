@@ -1,14 +1,10 @@
 import { describe, it, beforeAll, expect } from 'vitest';
 import request from 'supertest';
-import express from 'express';
+import { app } from '../../src/index';
 
 describe('Group Management Integration Test (per specs/001-expense-sharing-mvp/quickstart.md)', () => {
-  let app: express.Express;
-
   beforeAll(() => {
-    app = express();
-    app.use(express.json());
-    // No routes implemented yet — tests should fail until endpoints are added.
+    // Real app imported; migrations handled in other tests.
   });
 
   describe('Complete Group Management Flow', () => {
@@ -204,7 +200,8 @@ describe('Group Management Integration Test (per specs/001-expense-sharing-mvp/q
       ];
 
       for (const endpoint of endpoints) {
-        const req = request(app)[endpoint.method](endpoint.path);
+  const agent: any = request(app);
+  const req = agent[endpoint.method](endpoint.path);
         if (endpoint.data) {
           req.send(endpoint.data);
         }

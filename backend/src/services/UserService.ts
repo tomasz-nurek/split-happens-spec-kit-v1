@@ -1,12 +1,16 @@
 import { getDb } from '../database';
 import { User } from '../models/User';
+import { ActivityService } from './ActivityService';
+import { ActivityAction, ActivityEntityType } from '../models/ActivityLog';
 
 export class UserService {
   private db = getDb();
+  private activity = new ActivityService();
 
   async create(user: Omit<User, 'id' | 'created_at'>): Promise<User> {
     const [id] = await this.db('users').insert(user);
     const createdUser = await this.db('users').where({ id }).first();
+    await this.activity.logActivity(ActivityAction.CREATE, ActivityEntityType.user, createdUser.id, { userId: createdUser.id, userName: createdUser.name });
     return createdUser;
   }
 
@@ -19,7 +23,9 @@ export class UserService {
   }
 
   async delete(id: number): Promise<void> {
+    const existing = await this.db('users').where({ id }).first();
     await this.db('users').where({ id }).del();
+    await this.activity.logActivity(ActivityAction.DELETE, ActivityEntityType.user, id, { userId: id, userName: existing?.name });
   }
 
   async findByIds(ids: number[]): Promise<User[]> {

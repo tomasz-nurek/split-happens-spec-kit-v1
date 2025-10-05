@@ -1,6 +1,7 @@
 import { getDb } from '../database';
 import { User } from '../models/User';
 import { Group } from '../models/Group';
+import { serializeGroupBalances, GroupBalancesDTO } from '../utils/serializers';
 
 /**
  * Represents the balance of a single user within a specific group.
@@ -103,6 +104,23 @@ export class BalanceService {
       memberBalances,
       simplifiedDebts,
     };
+  }
+
+  /**
+   * New DTO-oriented method returning contract-aligned shape using serializer utilities.
+   * For now owes/owed maps are empty until detailed pairwise debt expansion is implemented.
+   */
+  async getGroupBalancesDTO(groupId: number): Promise<GroupBalancesDTO> {
+    const summary = await this.getGroupBalanceSummary(groupId);
+    // Map memberBalances to intermediate structure expected by serializeGroupBalances
+    const raw = summary.memberBalances.map(b => ({
+      userId: b.userId,
+      userName: b.userName,
+      balance: b.balance,
+      owes: [],
+      owed: [],
+    }));
+    return serializeGroupBalances(groupId, raw);
   }
 
   /**
