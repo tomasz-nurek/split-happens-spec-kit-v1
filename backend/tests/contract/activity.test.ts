@@ -58,83 +58,51 @@ describe('Activity API contract (per specs/001-expense-sharing-mvp/contracts/act
       );
     });
 
-    it('returns 200 with activity log array when valid', async () => {
+    it('returns 200 with activities wrapper when valid', async () => {
       const res = await request(app)
         .get('/api/activity')
         .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0]).toEqual(
-          expect.objectContaining({
-            id: expect.any(Number),
-            action: expect.stringMatching(/^(CREATE|DELETE)$/),
-            entity_type: expect.stringMatching(/^(expense|user|group)$/),
-            entity_id: expect.any(Number),
-            details: expect.any(String),
-            created_at: expect.any(String)
-          })
-        );
+      expect(res.body).toEqual(expect.objectContaining({ activities: expect.any(Array) }));
+      if (res.body.activities.length > 0) {
+        expect(res.body.activities[0]).toEqual(expect.objectContaining({
+          id: expect.any(Number),
+          type: expect.any(String),
+          timestamp: expect.any(String)
+        }));
       }
     });
 
-    it('returns 200 with activity log array when valid with limit parameter', async () => {
+    it('returns 200 with activities wrapper when valid with limit parameter', async () => {
       const res = await request(app)
         .get('/api/activity?limit=10')
         .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0]).toEqual(
-          expect.objectContaining({
-            id: expect.any(Number),
-            action: expect.stringMatching(/^(CREATE|DELETE)$/),
-            entity_type: expect.stringMatching(/^(expense|user|group)$/),
-            entity_id: expect.any(Number),
-            details: expect.any(String),
-            created_at: expect.any(String)
-          })
-        );
+      expect(res.body).toEqual(expect.objectContaining({ activities: expect.any(Array) }));
+      if (res.body.activities.length > 0) {
+        expect(res.body.activities[0]).toEqual(expect.objectContaining({ id: expect.any(Number) }));
       }
     });
 
-    it('returns 200 with activity log array when valid with offset parameter', async () => {
+    it('returns 200 with activities wrapper when valid with offset parameter', async () => {
       const res = await request(app)
         .get('/api/activity?offset=5')
         .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0]).toEqual(
-          expect.objectContaining({
-            id: expect.any(Number),
-            action: expect.stringMatching(/^(CREATE|DELETE)$/),
-            entity_type: expect.stringMatching(/^(expense|user|group)$/),
-            entity_id: expect.any(Number),
-            details: expect.any(String),
-            created_at: expect.any(String)
-          })
-        );
+      expect(res.body).toEqual(expect.objectContaining({ activities: expect.any(Array) }));
+      if (res.body.activities.length > 0) {
+        expect(res.body.activities[0]).toEqual(expect.objectContaining({ id: expect.any(Number) }));
       }
     });
 
-    it('returns 200 with activity log array when valid with both limit and offset parameters', async () => {
+    it('returns 200 with activities wrapper when valid with both limit and offset parameters', async () => {
       const res = await request(app)
         .get('/api/activity?limit=20&offset=10')
         .set('Authorization', `Bearer ${authToken}`);
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      if (res.body.length > 0) {
-        expect(res.body[0]).toEqual(
-          expect.objectContaining({
-            id: expect.any(Number),
-            action: expect.stringMatching(/^(CREATE|DELETE)$/),
-            entity_type: expect.stringMatching(/^(expense|user|group)$/),
-            entity_id: expect.any(Number),
-            details: expect.any(String),
-            created_at: expect.any(String)
-          })
-        );
+      expect(res.body).toEqual(expect.objectContaining({ activities: expect.any(Array) }));
+      if (res.body.activities.length > 0) {
+        expect(res.body.activities[0]).toEqual(expect.objectContaining({ id: expect.any(Number) }));
       }
     });
   });

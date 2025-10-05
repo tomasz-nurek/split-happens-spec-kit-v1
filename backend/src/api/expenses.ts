@@ -104,6 +104,60 @@ router.post('/groups/:id/expenses', requireAuth, asyncHandler(async (req: Reques
 }));
 
 /**
+ * PATCH /api/expenses/:id
+ * Update an expense (currently supports description and amount change)
+ */
+router.patch('/expenses/:id', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const expenseId = parseInt(req.params.id, 10);
+    const { description, amount } = req.body || {};
+
+    const idValidation = validateId(expenseId, 'Expense ID');
+    if (!idValidation.isValid) {
+      const errorResponse = formatValidationErrors(idValidation);
+      return next(new ValidationError(errorResponse?.error || 'Validation error'));
+    }
+
+    const existing = await expenseService.findById(expenseId);
+    if (!existing) return next(new NotFoundError('Expense not found'));
+
+    // Optional updates; validate when provided
+    if (description !== undefined) {
+      const descValidation = validateExpenseDescription(description);
+      if (!descValidation.isValid) {
+        const errorResponse = formatValidationErrors(descValidation);
+        return next(new ValidationError(errorResponse?.error || 'Validation error'));
+      }
+    }
+    if (amount !== undefined) {
+      const amtValidation = validateAmount(amount);
+      if (!amtValidation.isValid) {
+        const errorResponse = formatValidationErrors(amtValidation);
+        return next(new ValidationError(errorResponse?.error || 'Validation error'));
+      }
+    }
+
+    // Apply updates individually to preserve existing splits logic (splits unaffected for now)
+    if (description !== undefined) {
+      await expenseService.updateDescription(expenseId, description.trim());
+    }
+    if (amount !== undefined) {
+      // NOTE: For MVP we simply update the amount without recalculating historical splits.
+      // Future enhancement could re-normalize splits.
+      const db = (expenseService as any).db; // access underlying knex
+      await db('expenses').where({ id: expenseId }).update({ amount });
+      // Log separate update for amount change (treated as update activity)
+      // Activity logging of description change handled inside updateDescription; we add amount change metadata here.
+      const { ActivityService } = await import('../services/ActivityService');
+      const { ActivityAction, ActivityEntityType } = await import('../models/ActivityLog');
+      const actSvc = new ActivityService();
+      await actSvc.logActivity(ActivityAction.UPDATE, ActivityEntityType.expense, expenseId, { expenseId: expenseId, amount, description: description ?? existing.description });
+    }
+
+    const updated = await expenseService.findById(expenseId);
+    return res.status(200).json(updated);
+}));
+
+/**
  * DELETE /api/expenses/:id
  * Delete an expense
  */

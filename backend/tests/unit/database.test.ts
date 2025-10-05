@@ -48,4 +48,11 @@ describe('database lifecycle', () => {
     }
     expect(threw).toBe(true);
   });
+
+  it('healthCheck without throwOnFail returns ok:false after connection closed', async () => {
+    await initDatabase();
+    await closeDatabase();
+  const hc = await healthCheck();
+  expect(hc.ok).toBe(false);
+  });
 });

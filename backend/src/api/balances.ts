@@ -60,52 +60,9 @@ router.get('/groups/:id/balances', requireAuth, asyncHandler(async (req: Request
       return next(new NotFoundError('Group not found'));
     }
 
-    // Get balance summary from service
-    const balanceSummary = await balanceService.getGroupBalanceSummary(id);
-
-    // Transform to API contract format
-    const groupBalances: GroupBalance[] = balanceSummary.memberBalances.map(member => ({
-      user_id: member.userId,
-      user_name: member.userName,
-      balance: member.balance,
-      owes: [],
-      owed_by: []
-    }));
-
-    // Transform simplified debts to owes/owed_by format
-    const debtMap = new Map<number, { owes: DebtRelationship[], owed_by: DebtRelationship[] }>();
-
-    // Initialize debt tracking for each user
-    balanceSummary.memberBalances.forEach(member => {
-      debtMap.set(member.userId, { owes: [], owed_by: [] });
-    });
-
-    // Process simplified debts
-    balanceSummary.simplifiedDebts.forEach(debt => {
-      const fromDebts = debtMap.get(debt.from.userId)!;
-      const toDebts = debtMap.get(debt.to.userId)!;
-
-      fromDebts.owes.push({
-        user_id: debt.to.userId,
-        user_name: debt.to.userName,
-        amount: debt.amount
-      });
-
-      toDebts.owed_by.push({
-        user_id: debt.from.userId,
-        user_name: debt.from.userName,
-        amount: debt.amount
-      });
-    });
-
-    // Apply debt relationships to response
-    groupBalances.forEach(balance => {
-      const debts = debtMap.get(balance.user_id)!;
-      balance.owes = debts.owes;
-      balance.owed_by = debts.owed_by;
-    });
-
-    return res.status(200).json(groupBalances);
+    // Get balance summary in new DTO shape
+    const dto = await balanceService.getGroupBalancesDTO(id);
+    return res.status(200).json(dto);
 }));
 
 /**
@@ -142,6 +99,13 @@ router.get('/users/:id/balance', requireAuth, asyncHandler(async (req: Request, 
     };
 
     return res.status(200).json(response);
+}));
+
+// Backward compatibility: alias plural endpoint expected by some tests (/users/:id/balances)
+router.get('/users/:id/balances', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  // Delegate to singular handler logic by reusing implementation
+  (req.url = req.url.replace('/balances', '/balance'));
+  return (router as any).handle(req, res, next);
 }));
 
 export { router as balancesRouter };

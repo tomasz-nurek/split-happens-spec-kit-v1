@@ -3,10 +3,10 @@ import { Expense } from '../models/Expense';
 import { ExpenseSplit } from '../models/ExpenseSplit';
 import { ActivityService } from './ActivityService';
 import { ActivityAction, ActivityEntityType } from '../models/ActivityLog';
+import { serializeExpense, ExpenseDTO } from '../utils/serializers';
 
-export interface ExpenseWithSplits extends Expense {
-  splits: ExpenseSplit[];
-}
+// Legacy internal type retained for internal calculations; external callers should use ExpenseDTO now
+export interface ExpenseWithSplits extends Expense { splits: ExpenseSplit[]; }
 
 export interface CreateExpenseRequest {
   amount: number;
@@ -19,7 +19,7 @@ export class ExpenseService {
   private db = getDb();
   private activityService = new ActivityService();
 
-  async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseWithSplits> {
+  async create(groupId: number, expenseData: CreateExpenseRequest): Promise<ExpenseDTO> {
     const { amount, description, paidBy, participantIds } = expenseData;
 
     // Calculate equal split amounts with proper rounding to ensure sum equals original amount
@@ -61,20 +61,23 @@ export class ExpenseService {
       return {
         ...createdExpense,
         splits,
-      };
+      } as ExpenseWithSplits;
     }).then(async (result) => {
-      // Log activity after transaction completes successfully
+      // fetch participant info for metadata enrichment
+      const users = await this.db('users').whereIn('id', participantIds).select('id','name');
+      const payer = await this.db('users').where({ id: paidBy }).first();
+      const splitsMeta = result.splits.map(s => ({ userId: s.user_id, amount: s.amount }));
       await this.activityService.logActivity(
         ActivityAction.CREATE,
         ActivityEntityType.expense,
         result.id,
-        `Created expense: ${description}`
+        { expenseId: result.id, description: description, amount, groupId, participantIds, participantNames: users.map(u=>u.name), splits: splitsMeta, paidBy: paidBy, paidByName: payer?.name }
       );
-      return result;
+      return serializeExpense(result, result.splits);
     });
   }
 
-  async findByGroupId(groupId: number): Promise<ExpenseWithSplits[]> {
+  async findByGroupId(groupId: number): Promise<ExpenseDTO[]> {
     // Get expenses for the group
     const expenses = await this.db('expenses')
       .where({ group_id: groupId })
@@ -87,33 +90,51 @@ export class ExpenseService {
       : [];
 
     // Combine expenses with their splits
-    return expenses.map(expense => ({
-      ...expense,
-      splits: splits.filter(split => split.expense_id === expense.id),
-    }));
+    return expenses.map(expense => {
+      const linkedSplits = splits.filter(split => split.expense_id === expense.id);
+      return serializeExpense(expense, linkedSplits);
+    });
   }
 
-  async findById(id: number): Promise<ExpenseWithSplits | undefined> {
+  async findById(id: number): Promise<ExpenseDTO | undefined> {
     const expense = await this.db('expenses').where({ id }).first();
     if (!expense) {
       return undefined;
     }
 
     const splits = await this.db('expense_splits').where({ expense_id: id });
-
-    return {
-      ...expense,
-      splits,
-    };
+    return serializeExpense(expense, splits);
   }
 
   async delete(id: number): Promise<void> {
+    const existing = await this.db('expenses').where({ id }).first();
     await this.db.transaction(async (trx) => {
-      // Delete expense splits first (due to foreign key constraint)
       await trx('expense_splits').where({ expense_id: id }).del();
-      
-      // Delete the expense
       await trx('expenses').where({ id }).del();
     });
+    if (existing) {
+      await this.activityService.logActivity(
+        ActivityAction.DELETE,
+        ActivityEntityType.expense,
+        id,
+        { expenseId: id, description: existing.description, groupId: existing.group_id }
+      );
+    }
+  }
+
+  async updateDescription(id: number, newDescription: string): Promise<ExpenseDTO | undefined> {
+    const expense = await this.db('expenses').where({ id }).first();
+    if (!expense) return undefined;
+    await this.db('expenses').where({ id }).update({ description: newDescription });
+    const updated = await this.findById(id);
+    if (updated) {
+      await this.activityService.logActivity(
+        ActivityAction.UPDATE,
+        ActivityEntityType.expense,
+        id,
+        { expenseId: id, description: newDescription }
+      );
+    }
+    return updated;
   }
 }

@@ -180,16 +180,14 @@ describe('Expenses API contract (per specs/001-expense-sharing-mvp/contracts/exp
           participantIds: [1, 2, 3]
         });
       expect(res.status).toBe(201);
-      expect(res.body).toEqual(
-        expect.objectContaining({
-          id: expect.any(Number),
-          group_id: 1,
-          amount: 100.50,
-          description: 'Dinner',
-          paid_by: 1,
-          splits: expect.any(Array)
-        })
-      );
+      expect(res.body).toEqual(expect.objectContaining({
+        id: expect.any(Number),
+        groupId: 1,
+        amount: 100.50,
+        description: 'Dinner',
+        paidBy: 1,
+        splits: expect.any(Array)
+      }));
     });
   });
 
