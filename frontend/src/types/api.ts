@@ -83,3 +83,13 @@ export interface ApplicationError {
   details?: unknown;
   timestamp?: string;
 }
+
+export interface AuthLoginResponse {
+  token: string;
+  user: User;
+}
+
+export interface AuthVerifyResponse {
+  valid: boolean;
+  user: User;
+}

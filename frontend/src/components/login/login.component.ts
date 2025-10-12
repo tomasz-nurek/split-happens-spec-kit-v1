@@ -34,7 +34,7 @@ import { MatInputModule } from '@angular/material/input';
           </form>
         </mat-card-content>
       </mat-card>
-      <p class="hint">Authentication flow will be implemented in task T041b.</p>
+  <p class="hint">UI wiring to the new auth service arrives with task T048.</p>
     </section>
   `,
   styles: [
