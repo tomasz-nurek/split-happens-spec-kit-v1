@@ -207,9 +207,9 @@
     - Ensure standalone components architecture is properly configured
 
 ### Frontend Services  
-- [ ] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
+- [x] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
 ### Frontend Services  
-- [ ] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
+- [x] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
   - **REQUIREMENT**: JWT-based authentication service using Angular signals:
     - Implement signal-based state management for authentication status
     - Login/logout methods that communicate with backend auth API
