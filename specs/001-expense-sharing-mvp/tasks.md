@@ -194,7 +194,8 @@
 ## Phase 3.4: Frontend Implementation
 
 ### Frontend Project Setup (Prerequisites for services)
-- [ ] T041 Setup Angular project structure and core configuration in frontend/src/
+- [x] T041 Setup Angular project structure and core configuration in frontend/src/
+  - ✅ Completed: Established Angular Material-powered shell, HttpClient configuration, base API + error services, shared DTO types, placeholder routing, and directory scaffolding for services/components/guards/interceptors.
   - **REQUIREMENT**: Establish proper Angular v20 project foundation:
     - Create directory structure: `services/`, `components/`, `guards/`, `interceptors/`, `types/`
     - Configure HttpClient in app.config.ts with `provideHttpClient()`
