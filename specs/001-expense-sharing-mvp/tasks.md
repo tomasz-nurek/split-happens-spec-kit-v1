@@ -208,14 +208,30 @@
 
 ### Frontend Services  
 - [x] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
-### Frontend Services  
-- [x] T041b [P] Auth service with signals in frontend/src/services/auth.service.ts
   - **REQUIREMENT**: JWT-based authentication service using Angular signals:
     - Implement signal-based state management for authentication status
     - Login/logout methods that communicate with backend auth API
     - Token storage in localStorage with automatic refresh
     - Auth state computed signals for reactive UI updates
     - Integration with auth guard for route protection
+- [x] T041c Auth service security hardening and comprehensive testing
+  - **COMPLETED** (2025-10-12): Critical security and reliability improvements:
+    - Added 'initializing' status to AuthState to prevent race conditions during app startup
+    - Implemented request deduplication for concurrent verifyCurrentSession calls to prevent API spam
+    - Added exponential backoff retry logic (3 attempts) for token refresh failures preventing logout on transient network errors
+    - Added comprehensive security documentation warning that JWT parsing is UX-only, not for security decisions
+    - Removed deprecated `allowSignalWrites` flag from effect
+    - Removed dead code in base64 decoding (Node.js Buffer fallback won't work in browser)
+    - Created comprehensive test suite with 34 passing tests covering:
+      * Login/logout flows with success and failure cases
+      * Token verification and session restoration
+      * Request deduplication
+      * localStorage error handling
+      * Error message extraction from various error types
+      * State transitions and computed signals
+      * Token refresh scheduling and retry mechanism
+    - All frontend tests passing (34/34 SUCCESS)
+    - Fixes address critical security review findings from code review
 - [ ] T042 [P] User service with signals in frontend/src/services/user.service.ts
 - [ ] T043 [P] Group service with signals in frontend/src/services/group.service.ts
 - [ ] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts

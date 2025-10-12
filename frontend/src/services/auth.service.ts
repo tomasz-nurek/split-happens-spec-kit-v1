@@ -9,7 +9,7 @@ import { AuthLoginResponse, AuthVerifyResponse, User } from '../types/api';
 interface AuthState {
   token: string | null;
   user: User | null;
-  status: 'idle' | 'authenticating' | 'authenticated' | 'error';
+  status: 'initializing' | 'idle' | 'authenticating' | 'authenticated' | 'error';
   lastVerifiedAt: string | null;
 }
 
@@ -30,13 +30,16 @@ export class AuthService {
   private readonly state = signal<AuthState>({
     token: null,
     user: null,
-    status: 'idle',
+    status: 'initializing',
     lastVerifiedAt: null
   });
 
   private readonly authError = signal<string | null>(null);
   private readonly isVerifying = signal(false);
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingVerification: Promise<boolean> | null = null;
+  private refreshRetryCount = 0;
+  private readonly maxRefreshRetries = 3;
 
   readonly authState: Signal<AuthState> = this.state.asReadonly();
   readonly user: Signal<User | null> = computed(() => this.state().user);
@@ -45,6 +48,7 @@ export class AuthService {
     const snapshot = this.state();
     return snapshot.status === 'authenticated' && !!snapshot.token && !!snapshot.user;
   });
+  readonly isInitializing: Signal<boolean> = computed(() => this.state().status === 'initializing');
   readonly isBusy: Signal<boolean> = computed(() => {
     const snapshot = this.state();
     return snapshot.status === 'authenticating' || this.isVerifying();
@@ -59,7 +63,7 @@ export class AuthService {
       } else {
         this.clearRefreshTimer();
       }
-    }, { allowSignalWrites: true });
+    });
 
     this.restoreSession();
   }
@@ -130,57 +134,83 @@ export class AuthService {
       return false;
     }
 
+    // Request deduplication: reuse pending verification if one is in progress
+    if (this.pendingVerification) {
+      return this.pendingVerification;
+    }
+
     return this.verifyToken(token, options);
   }
 
   private async verifyToken(token: string, options: VerifyOptions = {}): Promise<boolean> {
     const { silent = false } = options;
+    
+    // Request deduplication: cache the pending promise
+    if (this.pendingVerification) {
+      return this.pendingVerification;
+    }
+
     this.isVerifying.set(true);
     if (!silent) {
       this.setStatus('authenticating');
     }
 
-    try {
-      const response = await firstValueFrom(
-        this.api.get<AuthVerifyResponse>('/auth/verify', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      );
+    const verificationPromise = (async () => {
+      try {
+        const response = await firstValueFrom(
+          this.api.get<AuthVerifyResponse>('/auth/verify', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        );
 
-      if (!response.valid) {
-        throw new Error('Token is not valid');
-      }
+        if (!response.valid) {
+          throw new Error('Token is not valid');
+        }
 
-      this.persistToken(token);
-      this.setState({
-        token,
-        user: response.user,
-        status: 'authenticated',
-        lastVerifiedAt: new Date().toISOString()
-      });
-      this.setError(null);
-      return true;
-    } catch (error) {
-      const message = this.extractErrorMessage(error) ?? 'Session expired. Please sign in again.';
-      this.setError(silent ? null : message);
-      if (!silent) {
-        this.errorService.reportError({ message, details: error });
+        this.persistToken(token);
+        this.setState({
+          token,
+          user: response.user,
+          status: 'authenticated',
+          lastVerifiedAt: new Date().toISOString()
+        });
+        this.setError(null);
+        this.refreshRetryCount = 0; // Reset retry count on success
+        return true;
+      } catch (error) {
+        const message = this.extractErrorMessage(error) ?? 'Session expired. Please sign in again.';
+        this.setError(silent ? null : message);
+        if (!silent) {
+          this.errorService.reportError({ message, details: error });
+        }
+        this.clearSession('idle');
+        return false;
+      } finally {
+        this.isVerifying.set(false);
+        this.pendingVerification = null;
       }
-      this.clearSession('idle');
-      return false;
-    } finally {
-      this.isVerifying.set(false);
-    }
+    })();
+
+    this.pendingVerification = verificationPromise;
+    return verificationPromise;
   }
 
   private restoreSession(): void {
     const token = this.readToken();
     if (!token) {
+      // No token found, initialization complete with idle state
+      this.setStatus('idle');
       return;
     }
 
     this.setState({ token });
-    void this.verifyToken(token, { silent: true });
+    // Verify token in background, will update status when complete
+    void this.verifyToken(token, { silent: true }).finally(() => {
+      // Ensure we're not stuck in initializing state
+      if (this.state().status === 'initializing') {
+        this.setStatus('idle');
+      }
+    });
   }
 
   private setState(patch: Partial<AuthState>): void {
@@ -261,8 +291,28 @@ export class AuthService {
 
     const delay = this.computeRefreshDelay(token);
     this.refreshTimer = setTimeout(() => {
-      void this.verifyToken(token, { silent: true });
+      void this.refreshWithRetry(token);
     }, delay);
+  }
+
+  private async refreshWithRetry(token: string): Promise<void> {
+    const success = await this.verifyToken(token, { silent: true });
+    
+    if (!success && this.refreshRetryCount < this.maxRefreshRetries) {
+      // Retry with exponential backoff
+      this.refreshRetryCount++;
+      const backoffDelay = Math.min(1000 * Math.pow(2, this.refreshRetryCount - 1), 30000);
+      
+      console.warn(`Token refresh failed, retrying in ${backoffDelay}ms (attempt ${this.refreshRetryCount}/${this.maxRefreshRetries})`);
+      
+      this.refreshTimer = setTimeout(() => {
+        void this.refreshWithRetry(token);
+      }, backoffDelay);
+    } else if (!success) {
+      // Max retries reached, give up
+      console.warn('Token refresh failed after maximum retries');
+      this.refreshRetryCount = 0;
+    }
   }
 
   private computeRefreshDelay(token: string): number {
@@ -280,6 +330,17 @@ export class AuthService {
     return Math.max(refreshIn, MIN_REFRESH_INTERVAL_MS);
   }
 
+  /**
+   * Extract token expiration from JWT payload.
+   * 
+   * SECURITY NOTE: This is for UX optimization only (scheduling refresh before expiry).
+   * The backend /auth/verify endpoint is the SINGLE SOURCE OF TRUTH for token validity.
+   * Client-side JWT parsing does NOT verify the signature and should NEVER be used
+   * for security decisions. An attacker can craft a malicious JWT with any expiration.
+   * 
+   * @param token JWT token string
+   * @returns Milliseconds until token expires, or null if unable to parse
+   */
   private getTokenExpiresInMs(token: string): number | null {
     try {
       const payloadSegment = token.split('.')[1];
@@ -311,11 +372,15 @@ export class AuthService {
     }
   }
 
+  /**
+   * Decode base64 string to UTF-8.
+   * Uses browser's atob when available.
+   * 
+   * @param value Base64-encoded string
+   * @returns Decoded UTF-8 string
+   */
   private decodeBase64(value: string): string {
     const globalScope = globalThis as typeof globalThis & {
-      Buffer?: {
-        from(input: string, encoding: string): { toString(encoding: string): string };
-      };
       atob?(data: string): string;
     };
 
@@ -323,11 +388,6 @@ export class AuthService {
       return globalScope.atob(value);
     }
 
-    const bufferFactory = globalScope.Buffer;
-    if (bufferFactory) {
-      return bufferFactory.from(value, 'base64').toString('utf-8');
-    }
-
-    throw new Error('Neither atob nor Buffer are available to decode base64 strings.');
+    throw new Error('atob is not available in this environment for base64 decoding.');
   }
 }
