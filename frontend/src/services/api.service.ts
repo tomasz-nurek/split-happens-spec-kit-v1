@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-const DEFAULT_API_BASE = 'http://localhost:3000/api';
+import { environment } from '../environments/environment';
 
 type PrimitiveParam = string | number | boolean;
 
@@ -14,7 +14,7 @@ export interface RequestOptions {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = this.resolveBaseUrl();
+  private readonly baseUrl = environment.apiBaseUrl.replace(/\/?$/, '');
 
   get<T>(path: string, options?: RequestOptions): Observable<T> {
     return this.http.get<T>(this.buildUrl(path), this.normalizeOptions(options));
@@ -35,15 +35,6 @@ export class ApiService {
   private buildUrl(path: string): string {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return `${this.baseUrl}${normalizedPath}`;
-  }
-
-  private resolveBaseUrl(): string {
-    const meta = import.meta as ImportMeta & { env?: Record<string, string | undefined> };
-  const envValue = meta.env?.['NG_APP_API_URL'];
-    if (envValue && envValue.trim().length > 0) {
-      return envValue.trim().replace(/\/?$/, '');
-    }
-    return DEFAULT_API_BASE;
   }
 
   private normalizeOptions(options?: RequestOptions) {

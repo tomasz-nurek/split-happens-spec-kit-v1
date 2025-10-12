@@ -1,4 +1,4 @@
-import { Component, Signal, computed, inject } from '@angular/core';
+import { Component, Signal, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -28,7 +28,7 @@ const NAV_LINKS: NavigationLink[] = [
         @for (link of navLinks; track link.path) {
           <a
             mat-button
-            routerLink="{{ link.path }}"
+            [routerLink]="link.path"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: true }"
           >
@@ -112,7 +112,7 @@ export class App {
 
   protected readonly navLinks = NAV_LINKS;
   protected readonly title = 'Split Happens Admin';
-  protected readonly activeError: Signal<ApplicationError | null> = computed(() => this.errorService.error());
+  protected readonly activeError: Signal<ApplicationError | null> = this.errorService.errorSignal();
 
   protected clearError(): void {
     this.errorService.clearError();

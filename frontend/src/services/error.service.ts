@@ -1,18 +1,17 @@
-import { Injectable, Signal, computed, signal } from '@angular/core';
+import { Injectable, Signal, signal } from '@angular/core';
 
 import { ApplicationError } from '../types/api';
 
 @Injectable({ providedIn: 'root' })
 export class ErrorService {
   private readonly lastError = signal<ApplicationError | null>(null);
-  private readonly errorComputed = computed(() => this.lastError());
 
   error(): ApplicationError | null {
     return this.lastError();
   }
 
   errorSignal(): Signal<ApplicationError | null> {
-    return this.errorComputed;
+    return this.lastError.asReadonly();
   }
 
   clearError(): void {
