@@ -40,7 +40,7 @@ export class GroupService {
 
   // Public signals
   readonly groupState: Signal<GroupState> = this.state.asReadonly();
-  readonly groups: Signal<Group[]> = computed(() => [...this.state().groups]);
+  readonly groups: Signal<Group[]> = computed(() => this.state().groups);
   readonly isLoading: Signal<boolean> = computed(() => this.state().status === 'loading');
   readonly isIdle: Signal<boolean> = computed(() => this.state().status === 'idle');
   readonly isSuccess: Signal<boolean> = computed(() => this.state().status === 'success');
@@ -51,6 +51,7 @@ export class GroupService {
   readonly lastLoadedAt: Signal<string | null> = computed(() => this.state().lastLoadedAt);
 
   private pendingLoad: Promise<Group[]> | null = null;
+  private pendingGroupFetches = new Map<number, Promise<Group | null>>();
 
   /**
    * Load all groups from the API
@@ -195,74 +196,101 @@ export class GroupService {
       return null;
     }
 
-    this.setError(null);
-
-    try {
-      const group = await firstValueFrom(
-        this.api.get<Group>(`/groups/${id}`)
-      );
-
-      // Update the group in the local state if it exists
-      const existingIndex = this.state().groups.findIndex(g => g.id === id);
-      if (existingIndex !== -1) {
-        const updatedGroups = [...this.state().groups];
-        updatedGroups[existingIndex] = group;
-        this.setState({
-          groups: updatedGroups,
-          status: 'success',
-          lastLoadedAt: new Date().toISOString()
-        });
-      }
-
-      this.errorService.clearError();
-      return group;
-    } catch (error) {
-      const message = this.extractErrorMessage(error) ?? 'Unable to load group details. Please try again.';
-      this.setError(message);
-      this.errorService.reportError({ message, details: error });
-      return null;
+    // Request deduplication: reuse pending fetch if one is in progress
+    if (this.pendingGroupFetches.has(id)) {
+      return this.pendingGroupFetches.get(id)!;
     }
+
+    this.setError(null);
+    const previousStatus = this.state().status;
+    this.setStatus('loading');
+
+    const fetchPromise = (async () => {
+      try {
+        const group = await firstValueFrom(
+          this.api.get<Group>(`/groups/${id}`)
+        );
+
+        // Update the group in the local state if it exists
+        const existingIndex = this.state().groups.findIndex(g => g.id === id);
+        if (existingIndex !== -1) {
+          const updatedGroups = [...this.state().groups];
+          updatedGroups[existingIndex] = group;
+          this.setState({
+            groups: updatedGroups,
+            status: 'success',
+            lastLoadedAt: new Date().toISOString()
+          });
+        } else {
+          // Restore previous status if group wasn't in state
+          this.setStatus(previousStatus);
+        }
+
+        this.errorService.clearError();
+        return group;
+      } catch (error) {
+        const message = this.extractErrorMessage(error) ?? 'Unable to load group details. Please try again.';
+        this.setError(message);
+        this.errorService.reportError({ message, details: error });
+        this.setStatus(previousStatus === 'success' ? 'success' : 'error');
+        return null;
+      } finally {
+        this.pendingGroupFetches.delete(id);
+      }
+    })();
+
+    this.pendingGroupFetches.set(id, fetchPromise);
+    return fetchPromise;
   }
 
-  /**
+    /**
    * Add members to a group
-   * @param groupId Group ID
+   * @param groupId Group ID to add members to
    * @param userIds Array of user IDs to add
-   * @returns Promise resolving to true on success, false on error
+   * @returns Promise resolving to updated group with new members, or null on error
    */
-  async addMembers(groupId: number, userIds: number[]): Promise<boolean> {
+  async addMembers(groupId: number, userIds: number[]): Promise<Group | null> {
     if (!groupId || groupId <= 0) {
       const message = 'Invalid group ID';
       this.setError(message);
       this.errorService.reportError({ message });
-      return false;
+      return null;
     }
 
     if (!userIds || userIds.length === 0) {
-      const message = 'At least one user ID is required';
+      const message = 'No user IDs provided';
       this.setError(message);
       this.errorService.reportError({ message });
-      return false;
+      return null;
+    }
+
+    // Fix #5: Validate no duplicate user IDs
+    if (new Set(userIds).size !== userIds.length) {
+      const message = 'Duplicate user IDs are not allowed';
+      this.setError(message);
+      this.errorService.reportError({ message });
+      return null;
     }
 
     this.setError(null);
+    const previousStatus = this.state().status;
+    this.setStatus('loading');
 
     try {
-      const body: AddMembersRequest = { userIds };
       await firstValueFrom(
-        this.api.post<GroupOperationResponse>(`/groups/${groupId}/members`, body)
+        this.api.post<void>(`/groups/${groupId}/members`, { userIds })
       );
 
-      // Reload the group to get updated members
-      await this.getGroupById(groupId);
-
+      // Refresh the group to get updated members
+      const group = await this.getGroupById(groupId);
       this.errorService.clearError();
-      return true;
+      return group;
     } catch (error) {
-      const message = this.extractErrorMessage(error) ?? 'Unable to add members to group. Please try again.';
+      const message = this.extractErrorMessage(error) ?? 'Unable to add members. Please try again.';
       this.setError(message);
       this.errorService.reportError({ message, details: error });
-      return false;
+      this.setStatus(previousStatus === 'success' ? 'success' : 'error');
+      return null;
     }
   }
 
@@ -288,6 +316,8 @@ export class GroupService {
     }
 
     this.setError(null);
+    const previousStatus = this.state().status;
+    this.setStatus('loading');
 
     try {
       await firstValueFrom(
@@ -303,6 +333,7 @@ export class GroupService {
       const message = this.extractErrorMessage(error) ?? 'Unable to remove member from group. Please try again.';
       this.setError(message);
       this.errorService.reportError({ message, details: error });
+      this.setStatus(previousStatus === 'success' ? 'success' : 'error');
       return false;
     }
   }
@@ -323,7 +354,7 @@ export class GroupService {
    */
   readonly groupsSortedByName: Signal<Group[]> = computed(() => {
     const groups = this.state().groups;
-    return [...groups].sort((a, b) => 
+    return groups.slice().sort((a, b) => 
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
     );
   });
@@ -336,7 +367,7 @@ export class GroupService {
     const query = this.searchQuery().toLowerCase().trim();
     const groups = this.state().groups;
     if (!query) {
-      return [...groups];
+      return groups;
     }
     return groups.filter(g => 
       g.name.toLowerCase().includes(query)

@@ -406,6 +406,25 @@ describe('GroupService', () => {
       // Should not add to state
       expect(service.groups().length).toBe(3);
     });
+
+    it('should deduplicate concurrent requests for the same group', async () => {
+      // Make two concurrent requests for the same group
+      const promise1 = service.getGroupById(1);
+      const promise2 = service.getGroupById(1);
+
+      // Should only make one HTTP request
+      const req = httpMock.expectOne('http://localhost:3000/api/groups/1');
+      req.flush(mockGroupWithMembers);
+
+      const [result1, result2] = await Promise.all([promise1, promise2]);
+
+      // Both should get the same result
+      expect(result1).toBe(result2);
+      expect(result1?.id).toBe(1);
+
+      // Verify no other pending requests
+      httpMock.verify();
+    });
   });
 
   describe('addMembers()', () => {
@@ -433,14 +452,15 @@ describe('GroupService', () => {
 
       const result = await addPromise;
 
-      expect(result).toBe(true);
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe(mockGroupWithMembers.id);
       expect(errorService.clearError).toHaveBeenCalled();
     });
 
     it('should reject invalid group ID (0)', async () => {
       const result = await service.addMembers(0, [1, 2]);
 
-      expect(result).toBe(false);
+      expect(result).toBeNull();
       expect(service.errorSignal()).toBe('Invalid group ID');
       expect(errorService.reportError).toHaveBeenCalled();
     });
@@ -448,15 +468,46 @@ describe('GroupService', () => {
     it('should reject invalid group ID (negative)', async () => {
       const result = await service.addMembers(-1, [1, 2]);
 
-      expect(result).toBe(false);
+      expect(result).toBeNull();
       expect(service.errorSignal()).toBe('Invalid group ID');
     });
 
     it('should reject empty userIds array', async () => {
       const result = await service.addMembers(1, []);
 
-      expect(result).toBe(false);
-      expect(service.errorSignal()).toBe('At least one user ID is required');
+      expect(result).toBeNull();
+      expect(service.errorSignal()).toBe('No user IDs provided');
+    });
+
+    it('should reject duplicate user IDs', async () => {
+      const result = await service.addMembers(1, [1, 2, 1]);
+
+      expect(result).toBeNull();
+      expect(service.errorSignal()).toBe('Duplicate user IDs are not allowed');
+      expect(errorService.reportError).toHaveBeenCalled();
+    });
+
+    it('should set loading state during operation', async () => {
+      const addPromise = service.addMembers(1, [1, 2]);
+
+      // Should be loading immediately
+      expect(service.isLoading()).toBe(true);
+
+      // Handle the POST request
+      const postReq = httpMock.expectOne('http://localhost:3000/api/groups/1/members');
+      postReq.flush({ message: 'Members added successfully' });
+
+      await Promise.resolve();
+
+      // Now handle the GET request to reload the group  
+      const getReq = httpMock.expectOne('http://localhost:3000/api/groups/1');
+      getReq.flush(mockGroupWithMembers);
+
+      await addPromise;
+
+      // Should be success after completion
+      expect(service.isLoading()).toBe(false);
+      expect(service.isSuccess()).toBe(true);
     });
 
     it('should handle errors', async () => {
@@ -467,7 +518,7 @@ describe('GroupService', () => {
 
       const result = await addPromise;
 
-      expect(result).toBe(false);
+      expect(result).toBeNull();
       expect(service.errorSignal()).toBe('User not found');
       expect(errorService.reportError).toHaveBeenCalled();
     });
@@ -529,6 +580,29 @@ describe('GroupService', () => {
 
       expect(result).toBe(false);
       expect(service.errorSignal()).toBe('Invalid user ID');
+    });
+
+    it('should set loading state during operation', async () => {
+      const removePromise = service.removeMember(1, 2);
+
+      // Should be loading immediately
+      expect(service.isLoading()).toBe(true);
+
+      // Handle the DELETE request
+      const deleteReq = httpMock.expectOne('http://localhost:3000/api/groups/1/members/2');
+      deleteReq.flush({ message: 'Member removed successfully' });
+
+      await Promise.resolve();
+
+      // Now handle the GET request to reload the group
+      const getReq = httpMock.expectOne('http://localhost:3000/api/groups/1');
+      getReq.flush(mockGroupWithMembers);
+
+      await removePromise;
+
+      // Should be success after completion
+      expect(service.isLoading()).toBe(false);
+      expect(service.isSuccess()).toBe(true);
     });
 
     it('should handle errors', async () => {
