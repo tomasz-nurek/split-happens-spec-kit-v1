@@ -162,6 +162,40 @@ describe('UserService', () => {
       expect(service.errorSignal()).toBeNull();
       expect(errorService.clearError).toHaveBeenCalled();
     });
+
+    it('should deduplicate concurrent loadUsers calls', async () => {
+      // Start two concurrent loads
+      const loadPromise1 = service.loadUsers();
+      const loadPromise2 = service.loadUsers();
+
+      // Should only make ONE HTTP request
+      const requests = httpMock.match('http://localhost:3000/api/users');
+      expect(requests.length).toBe(1);
+      
+      requests[0].flush(mockUsers);
+
+      // Both promises should resolve to the same data
+      const [result1, result2] = await Promise.all([loadPromise1, loadPromise2]);
+      expect(result1).toEqual(mockUsers);
+      expect(result2).toEqual(mockUsers);
+      expect(result1).toBe(result2); // Same reference
+    });
+
+    it('should allow new request after previous completes', async () => {
+      // First load
+      let loadPromise = service.loadUsers();
+      let req = httpMock.expectOne('http://localhost:3000/api/users');
+      req.flush(mockUsers);
+      await loadPromise;
+
+      // Second load should create new request
+      loadPromise = service.loadUsers();
+      req = httpMock.expectOne('http://localhost:3000/api/users');
+      req.flush(mockUsers);
+      await loadPromise;
+
+      expect(service.users()).toEqual(mockUsers);
+    });
   });
 
   describe('createUser()', () => {
@@ -377,9 +411,9 @@ describe('UserService', () => {
     });
 
     it('should not make API call', () => {
-      service.findUserById(1);
+      const user = service.findUserById(1);
       httpMock.expectNone('http://localhost:3000/api/users/1');
-      expect(true).toBe(true); // Ensure test has an expectation
+      expect(user).toEqual(mockUsers[0]); // Should find in local state
     });
   });
 
@@ -419,7 +453,7 @@ describe('UserService', () => {
     });
   });
 
-  describe('searchUsers()', () => {
+  describe('setSearchQuery() and filteredUsers', () => {
     beforeEach(async () => {
       const loadPromise = service.loadUsers();
       const req = httpMock.expectOne('http://localhost:3000/api/users');
@@ -428,47 +462,47 @@ describe('UserService', () => {
     });
 
     it('should return all users for empty query', () => {
-      const searchSignal = service.searchUsers('');
-      expect(searchSignal()).toEqual(mockUsers);
+      service.setSearchQuery('');
+      expect(service.filteredUsers()).toEqual(mockUsers);
     });
 
     it('should return all users for whitespace query', () => {
-      const searchSignal = service.searchUsers('   ');
-      expect(searchSignal()).toEqual(mockUsers);
+      service.setSearchQuery('   ');
+      expect(service.filteredUsers()).toEqual(mockUsers);
     });
 
     it('should filter users by name (case-insensitive)', () => {
-      const searchSignal = service.searchUsers('ali');
-      const results = searchSignal();
+      service.setSearchQuery('ali');
+      const results = service.filteredUsers();
       
       expect(results.length).toBe(1);
       expect(results[0].name).toBe('Alice');
     });
 
     it('should filter users with uppercase query', () => {
-      const searchSignal = service.searchUsers('BOB');
-      const results = searchSignal();
+      service.setSearchQuery('BOB');
+      const results = service.filteredUsers();
       
       expect(results.length).toBe(1);
       expect(results[0].name).toBe('Bob');
     });
 
     it('should return empty array for no matches', () => {
-      const searchSignal = service.searchUsers('xyz');
-      expect(searchSignal()).toEqual([]);
+      service.setSearchQuery('xyz');
+      expect(service.filteredUsers()).toEqual([]);
     });
 
     it('should filter users by partial name match', () => {
-      const searchSignal = service.searchUsers('ar');
-      const results = searchSignal();
+      service.setSearchQuery('ar');
+      const results = service.filteredUsers();
       
       expect(results.length).toBe(1);
       expect(results[0].name).toBe('Charlie');
     });
 
     it('should be reactive to state changes', async () => {
-      const searchSignal = service.searchUsers('david');
-      expect(searchSignal()).toEqual([]);
+      service.setSearchQuery('david');
+      expect(service.filteredUsers()).toEqual([]);
 
       // Add a user named David
       const createPromise = service.createUser('David');
@@ -476,10 +510,25 @@ describe('UserService', () => {
       req.flush({ id: 4, name: 'David', createdAt: '2025-01-04T00:00:00Z' });
       await createPromise;
 
-      // Search should now include David
-      const results = searchSignal();
+      // Filtered results should now include David
+      const results = service.filteredUsers();
       expect(results.length).toBe(1);
       expect(results[0].name).toBe('David');
+    });
+
+    it('should update when search query changes', () => {
+      service.setSearchQuery('ali');
+      expect(service.filteredUsers().length).toBe(1);
+
+      service.setSearchQuery('bob');
+      expect(service.filteredUsers().length).toBe(1);
+      expect(service.filteredUsers()[0].name).toBe('Bob');
+    });
+
+    it('should return readonly signal from getSearchQuery', () => {
+      service.setSearchQuery('test');
+      const querySignal = service.getSearchQuery();
+      expect(querySignal()).toBe('test');
     });
   });
 

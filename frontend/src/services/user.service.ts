@@ -32,6 +32,7 @@ export class UserService {
   });
 
   private readonly userError = signal<string | null>(null);
+  private readonly searchQuery = signal<string>('');
 
   // Public signals
   readonly userState: Signal<UserState> = this.state.asReadonly();
@@ -45,38 +46,50 @@ export class UserService {
   readonly errorSignal: Signal<string | null> = this.userError.asReadonly();
   readonly lastLoadedAt: Signal<string | null> = computed(() => this.state().lastLoadedAt);
 
+  private pendingLoad: Promise<User[]> | null = null;
+
   /**
    * Load all users from the API
    * @returns Promise resolving to array of users, or empty array on error
    */
   async loadUsers(): Promise<User[]> {
+    // Request deduplication: reuse pending load if one is in progress
+    if (this.pendingLoad) {
+      return this.pendingLoad;
+    }
     this.setError(null);
     this.setStatus('loading');
 
-    try {
-      const users = await firstValueFrom(
-        this.api.get<User[]>('/users')
-      );
+    this.pendingLoad = (async () => {
+      try {
+        const users = await firstValueFrom(
+          this.api.get<User[]>('/users')
+        );
 
-      this.setState({
-        users,
-        status: 'success',
-        lastLoadedAt: new Date().toISOString()
-      });
+        this.setState({
+          users,
+          status: 'success',
+          lastLoadedAt: new Date().toISOString()
+        });
 
-      this.errorService.clearError();
-      return users;
-    } catch (error) {
-      const message = this.extractErrorMessage(error) ?? 'Unable to load users. Please try again.';
-      this.setError(message);
-      this.errorService.reportError({ message, details: error });
-      this.setState({
-        users: [],
-        status: 'error',
-        lastLoadedAt: null
-      });
-      return [];
-    }
+        this.errorService.clearError();
+        return users;
+      } catch (error) {
+        const message = this.extractErrorMessage(error) ?? 'Unable to load users. Please try again.';
+        this.setError(message);
+        this.errorService.reportError({ message, details: error });
+        this.setState({
+          users: [],
+          status: 'error',
+          lastLoadedAt: null
+        });
+        return [];
+      } finally {
+        this.pendingLoad = null;
+      }
+    })();
+
+    return this.pendingLoad;
   }
 
   /**
@@ -186,20 +199,33 @@ export class UserService {
   });
 
   /**
-   * Search users by name (case-insensitive)
-   * @param query Search query
-   * @returns Computed signal that filters users based on the query
+   * Filtered users based on search query
+   * @returns Computed signal that filters users based on the current search query
    */
-  searchUsers(query: string): Signal<User[]> {
-    const normalizedQuery = query.toLowerCase().trim();
-    return computed(() => {
-      if (!normalizedQuery) {
-        return this.state().users;
-      }
-      return this.state().users.filter(u => 
-        u.name.toLowerCase().includes(normalizedQuery)
-      );
-    });
+  readonly filteredUsers: Signal<User[]> = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) {
+      return this.state().users;
+    }
+    return this.state().users.filter(u => 
+      u.name.toLowerCase().includes(query)
+    );
+  });
+
+  /**
+   * Set search query for filtering users
+   * @param query Search query string
+   */
+  setSearchQuery(query: string): void {
+    this.searchQuery.set(query);
+  }
+
+  /**
+   * Get current search query
+   * @returns Current search query as a signal
+   */
+  getSearchQuery(): Signal<string> {
+    return this.searchQuery.asReadonly();
   }
 
   /**
