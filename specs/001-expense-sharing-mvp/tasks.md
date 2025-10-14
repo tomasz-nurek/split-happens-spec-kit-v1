@@ -232,7 +232,20 @@
       * Token refresh scheduling and retry mechanism
     - All frontend tests passing (34/34 SUCCESS)
     - Fixes address critical security review findings from code review
-- [ ] T042 [P] User service with signals in frontend/src/services/user.service.ts
+- [x] T042 [P] User service with signals in frontend/src/services/user.service.ts
+  - ✅ **COMPLETED** (2025-10-14): Signal-based state management user service implemented:
+    - Created UserService with signal-based state for users list, loading status, and errors
+    - Implemented CRUD operations: loadUsers(), createUser(name), deleteUser(id)
+    - Added computed signals: isLoading, userCount, hasUsers, isIdle, isSuccess, isError
+    - Added utility methods: findUserById(), searchUsers(query), refresh(), clearError()
+    - Added computed signal usersSortedByName for alphabetically sorted user list
+    - Integrated with ApiService for HTTP operations and ErrorService for error reporting
+    - Follows Angular v20 zoneless architecture with signals for reactive state
+    - Comprehensive test suite with 48 tests covering all functionality
+    - Proper error extraction from various HTTP error response formats
+    - State immutability maintained throughout operations
+    - All frontend tests passing (82/82 SUCCESS)
+    - All backend tests passing (175/175 SUCCESS)
 - [ ] T043 [P] Group service with signals in frontend/src/services/group.service.ts
 - [ ] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts
 - [ ] T045 [P] Balance service with signals in frontend/src/services/balance.service.ts
