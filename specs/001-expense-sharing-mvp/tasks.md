@@ -246,7 +246,21 @@
     - State immutability maintained throughout operations
     - All frontend tests passing (82/82 SUCCESS)
     - All backend tests passing (175/175 SUCCESS)
-- [ ] T043 [P] Group service with signals in frontend/src/services/group.service.ts
+- [x] T043 [P] Group service with signals in frontend/src/services/group.service.ts
+  - ✅ **COMPLETED** (2025-10-14): Signal-based state management group service implemented:
+    - Created GroupService with signal-based state for groups list, loading status, and errors
+    - Implemented CRUD operations: loadGroups(), createGroup(name), deleteGroup(id), getGroupById(id)
+    - Implemented member management: addMembers(groupId, userIds), removeMember(groupId, userId)
+    - Added computed signals: isLoading, groupCount, hasGroups, isIdle, isSuccess, isError
+    - Added utility methods: findGroupById(), groupsSortedByName, filteredGroups, refresh(), clearError()
+    - Integrated with ApiService for HTTP operations and ErrorService for error reporting
+    - Follows Angular v20 zoneless architecture with signals for reactive state
+    - Request deduplication for concurrent loadGroups calls
+    - State immutability maintained with array copies in computed signals
+    - Comprehensive test suite with 57 tests covering all functionality
+    - Proper error extraction from various HTTP error response formats
+    - All frontend tests passing (145/145 SUCCESS)
+    - All backend tests passing (175/175 SUCCESS)
 - [ ] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts
 - [ ] T045 [P] Balance service with signals in frontend/src/services/balance.service.ts
 - [ ] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
