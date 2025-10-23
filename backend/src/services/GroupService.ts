@@ -10,7 +10,13 @@ export class GroupService {
   async create(group: Omit<Group, 'id' | 'created_at'>): Promise<Group> {
     const [id] = await this.db('groups').insert(group);
     const createdGroup = await this.db('groups').where({ id }).first();
-    await this.activity.logActivity(ActivityAction.CREATE, ActivityEntityType.group, createdGroup.id, { groupId: createdGroup.id, groupName: createdGroup.name });
+    await this.activity.logActivity(
+      ActivityAction.CREATE, 
+      ActivityEntityType.group, 
+      createdGroup.id, 
+      { groupId: createdGroup.id, groupName: createdGroup.name },
+      createdGroup.id // Pass group_id for efficient queries
+    );
     return createdGroup;
   }
 
@@ -24,19 +30,37 @@ export class GroupService {
 
   async delete(id: number): Promise<void> {
     await this.db('groups').where({ id }).del();
-    await this.activity.logActivity(ActivityAction.DELETE, ActivityEntityType.group, id, { groupId: id });
+    await this.activity.logActivity(
+      ActivityAction.DELETE, 
+      ActivityEntityType.group, 
+      id, 
+      { groupId: id },
+      id // Pass group_id for efficient queries
+    );
   }
 
   async addMember(groupId: number, userId: number): Promise<void> {
     await this.db('group_members').insert({ group_id: groupId, user_id: userId });
     const user = await this.db('users').where({ id: userId }).first();
-    await this.activity.logActivity(ActivityAction.UPDATE, ActivityEntityType.group, groupId, { addedUserId: userId, addedUserName: user?.name, groupId });
+    await this.activity.logActivity(
+      ActivityAction.UPDATE, 
+      ActivityEntityType.group, 
+      groupId, 
+      { addedUserId: userId, addedUserName: user?.name, groupId },
+      groupId // Pass group_id for efficient queries
+    );
   }
 
   async removeMember(groupId: number, userId: number): Promise<void> {
     const user = await this.db('users').where({ id: userId }).first();
     await this.db('group_members').where({ group_id: groupId, user_id: userId }).del();
-    await this.activity.logActivity(ActivityAction.UPDATE, ActivityEntityType.group, groupId, { removedUserId: userId, removedUserName: user?.name, groupId });
+    await this.activity.logActivity(
+      ActivityAction.UPDATE, 
+      ActivityEntityType.group, 
+      groupId, 
+      { removedUserId: userId, removedUserName: user?.name, groupId },
+      groupId // Pass group_id for efficient queries
+    );
   }
 
   async getMembers(groupId: number): Promise<any[]> {

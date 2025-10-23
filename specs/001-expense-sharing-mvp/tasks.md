@@ -280,7 +280,26 @@
     - Proper error extraction with 5xx error masking for security
     - All frontend tests passing (236/236 SUCCESS)
     - All backend tests passing (59/59 SUCCESS)
-- [ ] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
+- [x] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
+  - ✅ **COMPLETED** (2025-10-23): Signal-based state management activity service implemented:
+    - Created ActivityService with signal-based state for global and scoped activities
+    - Implemented loadActivities() for global activity log with pagination support
+    - Implemented scoped activity methods: loadGroupActivities(), loadUserActivities(), loadExpenseActivities()
+    - Added pagination methods: loadMore() and refresh()
+    - Added computed signals: isLoading, isSuccess, isError, isIdle, hasMore, activityCount, hasActivities
+    - Per-scope signals for groups/users/expenses: activitiesForX(), statusForX(), isLoadingForX(), hasMoreForX()
+    - Utility computed signals: activitiesByType(), activitiesSorted (newest first)
+    - Request deduplication for concurrent calls (global + per group/user/expense)
+    - State preservation on transient errors to avoid data loss
+    - Automatic data merging for pagination (append on offset > 0, replace otherwise)
+    - hasMore tracking based on returned count vs limit for infinite scroll support
+    - Integrated with ApiService for HTTP operations and ErrorService for error reporting
+    - Follows Angular v20 zoneless architecture with signals for reactive state
+    - State immutability maintained with array copying in state updates
+    - Comprehensive test suite with 96 tests covering all functionality
+    - Proper error extraction with 5xx error masking for security
+    - All frontend tests passing (301/301 SUCCESS)
+    - All backend tests passing (175/175 SUCCESS)
 
 ### Frontend Guards and Interceptors
 - [ ] T047 Auth guard and HTTP interceptor setup in frontend/src/guards/ and frontend/src/interceptors/

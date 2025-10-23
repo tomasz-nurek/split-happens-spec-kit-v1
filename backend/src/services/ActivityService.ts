@@ -28,7 +28,7 @@ export class ActivityService {
   /**
    * Generic filtered activity lookup supporting pagination and domain convenience filters.
    * - If userId provided: filters entity_type='user' and entity_id=userId.
-   * - If groupId provided: returns group events (entity_type='group', entity_id=groupId) OR expense events within that group (handled by higher layer currently by separate call if needed).
+   * - If groupId provided: uses denormalized group_id column for efficient lookup (includes both group events and expense events).
    * - If expenseId provided: filters entity_type='expense' and entity_id=expenseId.
    */
   async findBy(filters: ActivityFilters): Promise<ActivityLog[]> {
@@ -49,8 +49,9 @@ export class ActivityService {
     } else if (filters.expenseId !== undefined) {
       query = query.where({ entity_type: 'expense', entity_id: filters.expenseId });
     } else if (filters.groupId !== undefined) {
-      // group scoped events: just group entity events for now
-      query = query.where({ entity_type: 'group', entity_id: filters.groupId });
+      // Use denormalized group_id column for efficient O(log n) lookup with index
+      // This includes both group entity events AND expense events for that group
+      query = query.where('group_id', filters.groupId);
     }
 
     if (filters.offset !== undefined) {
@@ -66,12 +67,14 @@ export class ActivityService {
     action: ActivityAction,
     entityType: ActivityEntityType,
     entityId?: number,
-    details?: Record<string, any>
+    details?: Record<string, any>,
+    groupId?: number
   ): Promise<ActivityLog> {
     return this.create({
       action,
       entity_type: entityType,
       entity_id: entityId,
+      group_id: groupId,
       details: details ? JSON.stringify(details) : undefined
     });
   }
