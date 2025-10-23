@@ -262,7 +262,24 @@
     - All frontend tests passing (145/145 SUCCESS)
     - All backend tests passing (175/175 SUCCESS)
 - [x] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts
-- [ ] T045 [P] Balance service with signals in frontend/src/services/balance.service.ts
+- [x] T045 [P] Balance service with signals in frontend/src/services/balance.service.ts
+  - ✅ **COMPLETED** (2025-10-23): Signal-based state management balance service implemented:
+    - Created BalanceService with signal-based state for group and user balances
+    - Implemented loadGroupBalances(groupId) and loadUserBalance(userId) operations
+    - Added computed signals: isLoading, isSuccess, isError, status for both groups and users
+    - Per-group signals: balancesForGroup, statusForGroup, lastLoadedAtForGroup, etc.
+    - Per-user signals: balanceForUser, statusForUser, lastLoadedAtForUser, etc.
+    - Utility methods: findUserBalanceInGroup, refreshGroupBalances, refreshUserBalance, clearError
+    - LRU cache management for both groups (max 50) and users (max 50) with automatic cleanup
+    - Request deduplication for concurrent calls to prevent API spam
+    - Snake_case to camelCase transformation for API responses
+    - Integrated with ApiService for HTTP operations and ErrorService for error reporting
+    - Follows Angular v20 zoneless architecture with signals for reactive state
+    - State immutability maintained throughout operations
+    - Comprehensive test suite with 83 tests covering all functionality
+    - Proper error extraction with 5xx error masking for security
+    - All frontend tests passing (236/236 SUCCESS)
+    - All backend tests passing (59/59 SUCCESS)
 - [ ] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
 
 ### Frontend Guards and Interceptors
