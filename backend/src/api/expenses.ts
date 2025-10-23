@@ -150,7 +150,13 @@ router.patch('/expenses/:id', requireAuth, asyncHandler(async (req: Request, res
       const { ActivityService } = await import('../services/ActivityService');
       const { ActivityAction, ActivityEntityType } = await import('../models/ActivityLog');
       const actSvc = new ActivityService();
-      await actSvc.logActivity(ActivityAction.UPDATE, ActivityEntityType.expense, expenseId, { expenseId: expenseId, amount, description: description ?? existing.description });
+      await actSvc.logActivity(
+        ActivityAction.UPDATE, 
+        ActivityEntityType.expense, 
+        expenseId, 
+        { expenseId: expenseId, amount, description: description ?? existing.description },
+        existing.groupId // Pass group_id for efficient queries
+      );
     }
 
     const updated = await expenseService.findById(expenseId);

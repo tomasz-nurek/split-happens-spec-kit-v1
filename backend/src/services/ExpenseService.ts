@@ -71,7 +71,8 @@ export class ExpenseService {
         ActivityAction.CREATE,
         ActivityEntityType.expense,
         result.id,
-        { expenseId: result.id, description: description, amount, groupId, participantIds, participantNames: users.map(u=>u.name), splits: splitsMeta, paidBy: paidBy, paidByName: payer?.name }
+        { expenseId: result.id, description: description, amount, groupId, participantIds, participantNames: users.map(u=>u.name), splits: splitsMeta, paidBy: paidBy, paidByName: payer?.name },
+        groupId // Pass group_id for efficient queries
       );
       return serializeExpense(result, result.splits);
     });
@@ -117,7 +118,8 @@ export class ExpenseService {
         ActivityAction.DELETE,
         ActivityEntityType.expense,
         id,
-        { expenseId: id, description: existing.description, groupId: existing.group_id }
+        { expenseId: id, description: existing.description, groupId: existing.group_id },
+        existing.group_id // Pass group_id for efficient queries
       );
     }
   }
@@ -132,7 +134,8 @@ export class ExpenseService {
         ActivityAction.UPDATE,
         ActivityEntityType.expense,
         id,
-        { expenseId: id, description: newDescription }
+        { expenseId: id, description: newDescription },
+        expense.group_id // Pass group_id for efficient queries
       );
     }
     return updated;

@@ -64,6 +64,11 @@ export class ActivityService {
   private readonly api = inject(ApiService);
   private readonly errorService = inject(ErrorService);
 
+  // LRU cache limits to prevent unbounded memory growth
+  private readonly MAX_CACHED_GROUPS = 50;
+  private readonly MAX_CACHED_USERS = 50;
+  private readonly MAX_CACHED_EXPENSES = 50;
+
   // Global activity state
   private readonly _globalState = signal<ActivityState>({
     activities: [],
@@ -595,6 +600,9 @@ export class ActivityService {
 
       return { ...current, [groupId]: next };
     });
+
+    // Clean up old entries if cache is too large
+    this.cleanupOldestGroupCache();
   }
 
   private getUserState(userId: number): ActivityState {
@@ -630,6 +638,9 @@ export class ActivityService {
 
       return { ...current, [userId]: next };
     });
+
+    // Clean up old entries if cache is too large
+    this.cleanupOldestUserCache();
   }
 
   private getExpenseState(expenseId: number): ActivityState {
@@ -665,6 +676,9 @@ export class ActivityService {
 
       return { ...current, [expenseId]: next };
     });
+
+    // Clean up old entries if cache is too large
+    this.cleanupOldestExpenseCache();
   }
 
   private setGlobalState(patch: Partial<ActivityState>): void {
@@ -673,6 +687,84 @@ export class ActivityService {
 
   private setGlobalStatus(status: ActivityState['status']): void {
     this.setGlobalState({ status });
+  }
+
+  /**
+   * Clean up oldest cached group activities when cache exceeds MAX_CACHED_GROUPS
+   */
+  private cleanupOldestGroupCache(): void {
+    const currentState = this._groupActivityState();
+    const groupIds = Object.keys(currentState).map(Number);
+
+    if (groupIds.length > this.MAX_CACHED_GROUPS) {
+      // Sort by lastLoadedAt (oldest first)
+      const sorted = groupIds.sort((a, b) => {
+        const aTime = currentState[a]?.lastLoadedAt || '';
+        const bTime = currentState[b]?.lastLoadedAt || '';
+        return aTime.localeCompare(bTime);
+      });
+
+      // Remove oldest entries until we're at the limit
+      const toRemove = sorted.slice(0, groupIds.length - this.MAX_CACHED_GROUPS);
+
+      this._groupActivityState.update((current) => {
+        const next = { ...current };
+        toRemove.forEach((id) => delete next[id]);
+        return next;
+      });
+    }
+  }
+
+  /**
+   * Clean up oldest cached user activities when cache exceeds MAX_CACHED_USERS
+   */
+  private cleanupOldestUserCache(): void {
+    const currentState = this._userActivityState();
+    const userIds = Object.keys(currentState).map(Number);
+
+    if (userIds.length > this.MAX_CACHED_USERS) {
+      // Sort by lastLoadedAt (oldest first)
+      const sorted = userIds.sort((a, b) => {
+        const aTime = currentState[a]?.lastLoadedAt || '';
+        const bTime = currentState[b]?.lastLoadedAt || '';
+        return aTime.localeCompare(bTime);
+      });
+
+      // Remove oldest entries until we're at the limit
+      const toRemove = sorted.slice(0, userIds.length - this.MAX_CACHED_USERS);
+
+      this._userActivityState.update((current) => {
+        const next = { ...current };
+        toRemove.forEach((id) => delete next[id]);
+        return next;
+      });
+    }
+  }
+
+  /**
+   * Clean up oldest cached expense activities when cache exceeds MAX_CACHED_EXPENSES
+   */
+  private cleanupOldestExpenseCache(): void {
+    const currentState = this._expenseActivityState();
+    const expenseIds = Object.keys(currentState).map(Number);
+
+    if (expenseIds.length > this.MAX_CACHED_EXPENSES) {
+      // Sort by lastLoadedAt (oldest first)
+      const sorted = expenseIds.sort((a, b) => {
+        const aTime = currentState[a]?.lastLoadedAt || '';
+        const bTime = currentState[b]?.lastLoadedAt || '';
+        return aTime.localeCompare(bTime);
+      });
+
+      // Remove oldest entries until we're at the limit
+      const toRemove = sorted.slice(0, expenseIds.length - this.MAX_CACHED_EXPENSES);
+
+      this._expenseActivityState.update((current) => {
+        const next = { ...current };
+        toRemove.forEach((id) => delete next[id]);
+        return next;
+      });
+    }
   }
 
   private setError(message: string | null): void {

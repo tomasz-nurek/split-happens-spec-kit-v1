@@ -37,7 +37,7 @@ router.get('/activity', requireAuth, asyncHandler(async (req: Request, res: Resp
 
 /**
  * GET /api/groups/:id/activity
- * Group-scoped activity events.
+ * Group-scoped activity events (uses denormalized group_id for O(log n) performance).
  */
 router.get('/groups/:id/activity', requireAuth, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const groupId = parseInt(req.params.id, 10);
@@ -46,15 +46,12 @@ router.get('/groups/:id/activity', requireAuth, asyncHandler(async (req: Request
   if (!group) return next(new NotFoundError('Group not found'));
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
   const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : undefined;
-  // Group events
-  const groupEvents = await activityService.findBy({ groupId, limit, offset });
-  // Expense events for this group: naive fetch all expense activities then filter by metadata.groupId
-  const allExpenseEvents = await activityService.findBy({ entityType: 'expense' as any });
-  const expenseEvents = allExpenseEvents.filter(a => {
-    try { const d = a.details && JSON.parse(a.details); return d && d.groupId === groupId; } catch { return false; }
-  });
-  const combined = [...groupEvents, ...expenseEvents].sort((a,b)=> (b.created_at as any) - (a.created_at as any));
-  return res.status(200).json({ groupId, groupName: group.name, activities: serializeActivities(combined) });
+  
+  // Use denormalized group_id column for efficient O(log n) lookup
+  // This includes both group entity events AND expense events for that group
+  const activities = await activityService.findBy({ groupId, limit, offset });
+  
+  return res.status(200).json({ groupId, groupName: group.name, activities: serializeActivities(activities) });
 }));
 
 /**
