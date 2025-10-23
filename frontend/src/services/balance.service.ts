@@ -455,7 +455,9 @@ export class BalanceService {
     }
 
     return {
-      balance: current.balance ? { ...current.balance } : null,
+      balance: current.balance
+        ? { ...current.balance, groupBalances: [...current.balance.groupBalances] }
+        : null,
       status: current.status,
       lastLoadedAt: current.lastLoadedAt
     };
@@ -470,7 +472,11 @@ export class BalanceService {
       };
 
       const next: UserBalanceState = {
-        balance: patch.balance !== undefined ? patch.balance : existing.balance,
+        balance: patch.balance !== undefined
+          ? patch.balance
+            ? { ...patch.balance, groupBalances: [...patch.balance.groupBalances] }
+            : null
+          : existing.balance,
         status: patch.status ?? existing.status,
         lastLoadedAt: patch.lastLoadedAt !== undefined ? patch.lastLoadedAt : existing.lastLoadedAt
       };
