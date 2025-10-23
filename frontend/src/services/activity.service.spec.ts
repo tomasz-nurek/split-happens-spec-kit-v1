@@ -141,7 +141,9 @@ describe('ActivityService', () => {
       const req = httpMock.expectOne('http://localhost:3000/api/activity?limit=20');
       req.flush({ activities: mockActivities });
 
-      await loadPromise;
+      const result = await loadPromise;
+      expect(result).toHaveSize(2);
+      expect(service.activityCount()).toBe(2);
     });
 
     it('should handle offset parameter only', async () => {
@@ -150,7 +152,9 @@ describe('ActivityService', () => {
       const req = httpMock.expectOne('http://localhost:3000/api/activity?offset=10');
       req.flush({ activities: mockActivities });
 
-      await loadPromise;
+      const result = await loadPromise;
+      expect(result).toHaveSize(2);
+      expect(service.activityCount()).toBe(2);
     });
 
     it('should append activities when offset > 0', async () => {
@@ -347,7 +351,9 @@ describe('ActivityService', () => {
       );
       req.flush({ groupId, groupName: 'Trip', activities: mockActivities });
 
-      await loadPromise;
+      const result = await loadPromise;
+      expect(result).toHaveSize(2);
+      expect(service.activitiesForGroup(groupId)()).toHaveSize(2);
     });
 
     it('should reject invalid group ID', async () => {
@@ -469,7 +475,9 @@ describe('ActivityService', () => {
       );
       req.flush({ userId, userName: 'Alice', activities: mockActivities });
 
-      await loadPromise;
+      const result = await loadPromise;
+      expect(result).toHaveSize(2);
+      expect(service.activitiesForUser(userId)()).toHaveSize(2);
     });
 
     it('should reject invalid user ID', async () => {
@@ -572,7 +580,9 @@ describe('ActivityService', () => {
       );
       req.flush({ expenseId, activities: mockActivities });
 
-      await loadPromise;
+      const result = await loadPromise;
+      expect(result).toHaveSize(2);
+      expect(service.activitiesForExpense(expenseId)()).toHaveSize(2);
     });
 
     it('should reject invalid expense ID', async () => {
