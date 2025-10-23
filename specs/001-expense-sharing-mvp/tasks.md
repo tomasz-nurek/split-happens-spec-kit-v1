@@ -261,7 +261,7 @@
     - Proper error extraction from various HTTP error response formats
     - All frontend tests passing (145/145 SUCCESS)
     - All backend tests passing (175/175 SUCCESS)
-- [ ] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts
+- [x] T044 [P] Expense service with signals in frontend/src/services/expense.service.ts
 - [ ] T045 [P] Balance service with signals in frontend/src/services/balance.service.ts
 - [ ] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
 
