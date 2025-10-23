@@ -573,4 +573,323 @@ describe('ExpenseService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('LRU cache and memory management', () => {
+    it('should track recently accessed groups', async () => {
+      const load1 = service.loadExpenses(1);
+      const req1 = httpMock.expectOne(`${baseUrl}/groups/1/expenses`);
+      req1.flush(mockExpenses);
+      await load1;
+
+      const load2 = service.loadExpenses(2);
+      const req2 = httpMock.expectOne(`${baseUrl}/groups/2/expenses`);
+      req2.flush(mockExpensesGroupTwo);
+      await load2;
+
+      expect(service.groupIds()).toEqual([1, 2]);
+    });
+
+    it('should cleanup old groups when MAX_CACHED_GROUPS exceeded', async () => {
+      const MAX_CACHED_GROUPS = (service as any).MAX_CACHED_GROUPS;
+      
+      // Load MAX_CACHED_GROUPS + 5 groups
+      for (let i = 1; i <= MAX_CACHED_GROUPS + 5; i++) {
+        const mockData: Expense[] = [{
+          id: i * 100,
+          groupId: i,
+          description: `Expense ${i}`,
+          amount: 10,
+          paidBy: 1,
+          paidByName: 'User',
+          createdAt: new Date().toISOString()
+        }];
+
+        const load = service.loadExpenses(i);
+        const req = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        req.flush(mockData);
+        await load;
+      }
+
+      // Should only keep MAX_CACHED_GROUPS most recent groups
+      const currentGroupIds = service.groupIds();
+      expect(currentGroupIds.length).toBe(MAX_CACHED_GROUPS);
+      
+      // First 5 groups should be evicted
+      expect(currentGroupIds.includes(1)).toBeFalse();
+      expect(currentGroupIds.includes(2)).toBeFalse();
+      expect(currentGroupIds.includes(3)).toBeFalse();
+      expect(currentGroupIds.includes(4)).toBeFalse();
+      expect(currentGroupIds.includes(5)).toBeFalse();
+      
+      // Recent groups should still be present
+      expect(currentGroupIds.includes(MAX_CACHED_GROUPS + 5)).toBeTrue();
+      expect(currentGroupIds.includes(MAX_CACHED_GROUPS + 4)).toBeTrue();
+    });
+
+    it('should update LRU order when accessing existing groups', async () => {
+      const MAX_CACHED_GROUPS = (service as any).MAX_CACHED_GROUPS;
+
+      // Load MAX_CACHED_GROUPS groups
+      for (let i = 1; i <= MAX_CACHED_GROUPS; i++) {
+        const load = service.loadExpenses(i);
+        const req = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        req.flush([]);
+        await load;
+      }
+
+      // Re-access group 1 (oldest)
+      const reaccess = service.loadExpenses(1);
+      const req1 = httpMock.expectOne(`${baseUrl}/groups/1/expenses`);
+      req1.flush([]);
+      await reaccess;
+
+      // Load one more group (should evict group 2, not group 1)
+      const loadNew = service.loadExpenses(MAX_CACHED_GROUPS + 1);
+      const reqNew = httpMock.expectOne(`${baseUrl}/groups/${MAX_CACHED_GROUPS + 1}/expenses`);
+      reqNew.flush([]);
+      await loadNew;
+
+      const currentGroupIds = service.groupIds();
+      expect(currentGroupIds.includes(1)).toBeTrue(); // Still present (recently accessed)
+      expect(currentGroupIds.includes(2)).toBeFalse(); // Evicted (oldest)
+    });
+
+    it('should clean up signal caches when groups are evicted', async () => {
+      const MAX_CACHED_GROUPS = (service as any).MAX_CACHED_GROUPS;
+
+      // Load group 1
+      const load = service.loadExpenses(1);
+      const req = httpMock.expectOne(`${baseUrl}/groups/1/expenses`);
+      req.flush(mockExpenses);
+      await load;
+
+      // Create signals for group 1
+      const expensesSignal = service.expensesForGroup(1);
+      const statusSignal = service.statusForGroup(1);
+      expect(expensesSignal()).toEqual(mockExpenses);
+      expect(statusSignal()).toBe('success');
+
+      // Load enough groups to evict group 1
+      for (let i = 2; i <= MAX_CACHED_GROUPS + 1; i++) {
+        const loadGroup = service.loadExpenses(i);
+        const reqGroup = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        reqGroup.flush([]);
+        await loadGroup;
+      }
+
+      // Group 1 should be evicted - signals should return empty/idle state
+      expect(service.expensesForGroup(1)()).toEqual([]);
+      expect(service.statusForGroup(1)()).toBe('idle');
+      expect(service.hasExpensesForGroup(1)()).toBeFalse();
+      expect(service.totalAmountForGroup(1)()).toBe(0);
+    });
+
+    it('should maintain functionality with fewer groups than cache limit', async () => {
+      // Load only 5 groups (well under limit)
+      for (let i = 1; i <= 5; i++) {
+        const load = service.loadExpenses(i);
+        const req = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        req.flush([]);
+        await load;
+      }
+
+      // All groups should be present
+      expect(service.groupIds()).toEqual([1, 2, 3, 4, 5]);
+
+      // No cleanup should have occurred
+      const recentlyAccessed = (service as any).recentlyAccessedGroups;
+      expect(recentlyAccessed.length).toBe(5);
+    });
+
+    it('should update access order on create, update, and delete operations', async () => {
+      // Load initial data
+      let load = service.loadExpenses(groupId);
+      let req = httpMock.expectOne(`${baseUrl}/groups/${groupId}/expenses`);
+      req.flush(mockExpenses);
+      await load;
+
+      // Load second group
+      load = service.loadExpenses(2);
+      req = httpMock.expectOne(`${baseUrl}/groups/2/expenses`);
+      req.flush([]);
+      await load;
+
+      // Create expense in group 1 (should update access order)
+      const payload: CreateExpensePayload = {
+        amount: 50,
+        description: 'Test',
+        paidBy: 1,
+        participantIds: [1]
+      };
+      const create = service.createExpense(groupId, payload);
+      req = httpMock.expectOne(`${baseUrl}/groups/${groupId}/expenses`);
+      req.flush({ ...mockExpenses[0], id: 999 });
+      await create;
+
+      const recentlyAccessed = (service as any).recentlyAccessedGroups;
+      // Group 1 should be most recent (at end of array)
+      expect(recentlyAccessed[recentlyAccessed.length - 1]).toBe(groupId);
+    });
+
+    it('should not interfere with data integrity when cleaning up cache', async () => {
+      const MAX_CACHED_GROUPS = (service as any).MAX_CACHED_GROUPS;
+      
+      // Load group 1 with specific expenses
+      let load = service.loadExpenses(1);
+      let req = httpMock.expectOne(`${baseUrl}/groups/1/expenses`);
+      req.flush(mockExpenses);
+      await load;
+
+      // Verify initial data
+      expect(service.expensesForGroup(1)()).toEqual(mockExpenses);
+      expect(service.totalAmountForGroup(1)()).toBe(75);
+
+      // Load group 2 with different expenses
+      load = service.loadExpenses(2);
+      req = httpMock.expectOne(`${baseUrl}/groups/2/expenses`);
+      req.flush(mockExpensesGroupTwo);
+      await load;
+
+      expect(service.expensesForGroup(2)()).toEqual(mockExpensesGroupTwo);
+      expect(service.totalAmountForGroup(2)()).toBe(60);
+
+      // Load enough groups to trigger cleanup (should evict group 1)
+      for (let i = 3; i <= MAX_CACHED_GROUPS + 1; i++) {
+        const mockData: Expense[] = [{
+          id: i * 100,
+          groupId: i,
+          description: `Expense ${i}`,
+          amount: 10,
+          paidBy: 1,
+          paidByName: 'User',
+          createdAt: new Date().toISOString()
+        }];
+
+        const loadGroup = service.loadExpenses(i);
+        const reqGroup = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        reqGroup.flush(mockData);
+        await loadGroup;
+      }
+
+      // Group 1 should be evicted
+      expect(service.groupIds().includes(1)).toBeFalse();
+      expect(service.expensesForGroup(1)()).toEqual([]); // Returns empty, not stale data
+
+      // Group 2 should still be present (more recent)
+      expect(service.groupIds().includes(2)).toBeTrue();
+      expect(service.expensesForGroup(2)()).toEqual(mockExpensesGroupTwo);
+      expect(service.totalAmountForGroup(2)()).toBe(60);
+
+      // Most recent groups should be intact
+      const lastGroupId = MAX_CACHED_GROUPS + 1;
+      expect(service.groupIds().includes(lastGroupId)).toBeTrue();
+      expect(service.expensesForGroup(lastGroupId)().length).toBe(1);
+      expect(service.totalAmountForGroup(lastGroupId)()).toBe(10);
+    });
+
+    it('should re-load evicted group data when accessed again', async () => {
+      const MAX_CACHED_GROUPS = (service as any).MAX_CACHED_GROUPS;
+
+      // Load group 1
+      let load = service.loadExpenses(1);
+      let req = httpMock.expectOne(`${baseUrl}/groups/1/expenses`);
+      req.flush(mockExpenses);
+      await load;
+
+      const originalExpenses = service.expensesForGroup(1)();
+      expect(originalExpenses).toEqual(mockExpenses);
+
+      // Load enough groups to evict group 1
+      for (let i = 2; i <= MAX_CACHED_GROUPS + 1; i++) {
+        const loadGroup = service.loadExpenses(i);
+        const reqGroup = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        reqGroup.flush([]);
+        await loadGroup;
+      }
+
+      // Group 1 should be evicted
+      expect(service.groupIds().includes(1)).toBeFalse();
+
+      // Re-access group 1 - should trigger new load
+      const reloadPromise = service.loadExpenses(1);
+      const reloadReq = httpMock.expectOne(`${baseUrl}/groups/1/expenses`);
+      
+      // Return updated data
+      const updatedExpenses: Expense[] = [
+        { ...mockExpenses[0], amount: 100 }
+      ];
+      reloadReq.flush(updatedExpenses);
+      
+      const result = await reloadPromise;
+
+      // Should have fresh data, not cached data
+      expect(result).toEqual(updatedExpenses);
+      expect(service.expensesForGroup(1)()).toEqual(updatedExpenses);
+      expect(service.totalAmountForGroup(1)()).toBe(100);
+    });
+
+    it('should not lose data during concurrent operations with cache cleanup', async () => {
+      const MAX_CACHED_GROUPS = (service as any).MAX_CACHED_GROUPS;
+
+      // Load MAX_CACHED_GROUPS - 1 groups
+      for (let i = 1; i < MAX_CACHED_GROUPS; i++) {
+        const load = service.loadExpenses(i);
+        const req = httpMock.expectOne(`${baseUrl}/groups/${i}/expenses`);
+        req.flush([{
+          id: i * 100,
+          groupId: i,
+          description: `Expense ${i}`,
+          amount: i * 10,
+          paidBy: 1,
+          paidByName: 'User',
+          createdAt: new Date().toISOString()
+        }]);
+        await load;
+      }
+
+      // Load one more group to be at limit
+      const load = service.loadExpenses(MAX_CACHED_GROUPS);
+      const req = httpMock.expectOne(`${baseUrl}/groups/${MAX_CACHED_GROUPS}/expenses`);
+      req.flush([{
+        id: 999,
+        groupId: MAX_CACHED_GROUPS,
+        description: 'At Limit',
+        amount: 50,
+        paidBy: 1,
+        paidByName: 'User',
+        createdAt: new Date().toISOString()
+      }]);
+      await load;
+
+      // All groups should be present
+      expect(service.groupIds().length).toBe(MAX_CACHED_GROUPS);
+
+      // Perform operation on most recent group (should not trigger cleanup)
+      const createPayload: CreateExpensePayload = {
+        amount: 25,
+        description: 'New Expense',
+        paidBy: 1,
+        participantIds: [1]
+      };
+      const createPromise = service.createExpense(MAX_CACHED_GROUPS, createPayload);
+      const createReq = httpMock.expectOne(`${baseUrl}/groups/${MAX_CACHED_GROUPS}/expenses`);
+      createReq.flush({
+        id: 1000,
+        groupId: MAX_CACHED_GROUPS,
+        description: 'New Expense',
+        amount: 25,
+        paidBy: 1,
+        paidByName: 'User',
+        createdAt: new Date().toISOString()
+      });
+      await createPromise;
+
+      // Should still have all groups (no new group added, just operation on existing)
+      expect(service.groupIds().length).toBe(MAX_CACHED_GROUPS);
+      
+      // Data should be updated
+      expect(service.expenseCountForGroup(MAX_CACHED_GROUPS)()).toBe(2);
+      expect(service.totalAmountForGroup(MAX_CACHED_GROUPS)()).toBe(75); // 50 + 25
+    });
+  });
 });

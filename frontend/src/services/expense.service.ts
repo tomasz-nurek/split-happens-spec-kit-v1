@@ -35,6 +35,10 @@ export class ExpenseService {
   private readonly api = inject(ApiService);
   private readonly errorService = inject(ErrorService);
 
+  // LRU cache configuration to prevent unbounded memory growth
+  private readonly MAX_CACHED_GROUPS = 50;
+  private readonly recentlyAccessedGroups: number[] = [];
+
   private readonly state = signal<Record<number, ExpenseGroupState>>({});
   private readonly expenseError = signal<string | null>(null);
 
@@ -423,6 +427,10 @@ export class ExpenseService {
 
       return { ...current, [groupId]: next };
     });
+
+    // Mark group as recently accessed and cleanup old groups if needed
+    this.markGroupAccessed(groupId);
+    this.cleanupOldGroups();
   }
 
   private getOrCreateGroupSignal<T>(
@@ -523,5 +531,57 @@ export class ExpenseService {
     }
 
     return null;
+  }
+
+  /**
+   * Mark a group as recently accessed for LRU tracking
+   */
+  private markGroupAccessed(groupId: number): void {
+    // Remove if already exists
+    const index = this.recentlyAccessedGroups.indexOf(groupId);
+    if (index > -1) {
+      this.recentlyAccessedGroups.splice(index, 1);
+    }
+    // Add to end (most recently accessed)
+    this.recentlyAccessedGroups.push(groupId);
+  }
+
+  /**
+   * Clean up least recently used groups when cache limit is exceeded
+   */
+  private cleanupOldGroups(): void {
+    if (this.recentlyAccessedGroups.length <= this.MAX_CACHED_GROUPS) {
+      return;
+    }
+
+    // Calculate how many groups to remove
+    const groupsToRemove = this.recentlyAccessedGroups.length - this.MAX_CACHED_GROUPS;
+    const groupIdsToRemove = this.recentlyAccessedGroups.splice(0, groupsToRemove);
+
+    if (groupIdsToRemove.length === 0) {
+      return;
+    }
+
+    // Remove from state
+    this.state.update((current) => {
+      const next = { ...current };
+      for (const groupId of groupIdsToRemove) {
+        delete next[groupId];
+      }
+      return next;
+    });
+
+    // Clean up signal caches
+    for (const groupId of groupIdsToRemove) {
+      this.expensesSignals.delete(groupId);
+      this.statusSignals.delete(groupId);
+      this.loadingSignals.delete(groupId);
+      this.successSignals.delete(groupId);
+      this.errorSignals.delete(groupId);
+      this.hasExpensesSignals.delete(groupId);
+      this.totalAmountSignals.delete(groupId);
+      this.lastLoadedSignals.delete(groupId);
+      this.countSignals.delete(groupId);
+    }
   }
 }
