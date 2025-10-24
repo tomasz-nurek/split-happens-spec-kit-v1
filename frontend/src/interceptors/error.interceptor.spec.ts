@@ -172,7 +172,7 @@ describe('errorInterceptor', () => {
       );
     });
 
-    it('should use HttpErrorResponse message when no server message', () => {
+    it('should use fallback message when server provides no error message', () => {
       httpClient.get('/api/users/999').subscribe({
         error: () => { }
       });
@@ -181,7 +181,7 @@ describe('errorInterceptor', () => {
       req.flush(null, { status: 404, statusText: 'Not Found' });
 
       expect(errorService.reportError).toHaveBeenCalled();
-      // HttpErrorResponse will generate its own message
+      // Should fall back to extracting from HttpErrorResponse.message
       const call = errorService.reportError.calls.mostRecent();
       const arg = call.args[0];
       if (typeof arg === 'object' && arg !== null && 'message' in arg) {
@@ -238,7 +238,7 @@ describe('errorInterceptor', () => {
       );
     });
 
-    it('should use HttpErrorResponse message for 400 when no server message', () => {
+    it('should use fallback message for 400 when server provides no error message', () => {
       httpClient.post('/api/users', { invalid: 'data' }).subscribe({
         error: () => { }
       });
@@ -247,7 +247,7 @@ describe('errorInterceptor', () => {
       req.flush(null, { status: 400, statusText: 'Bad Request' });
 
       expect(errorService.reportError).toHaveBeenCalled();
-      // HttpErrorResponse will generate its own message
+      // Should fall back to extracting from HttpErrorResponse.message
       const call = errorService.reportError.calls.mostRecent();
       const arg = call.args[0];
       if (typeof arg === 'object' && arg !== null && 'message' in arg) {
