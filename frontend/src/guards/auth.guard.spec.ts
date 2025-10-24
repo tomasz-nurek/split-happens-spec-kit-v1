@@ -168,9 +168,63 @@ describe('authGuard', () => {
     });
 
     it('should respect token in localStorage on page load', async () => {
-      // This test is complex due to AuthService initialization behavior
-      // Skip it since it tests AuthService more than the guard itself
-      pending('Skipped: Tests AuthService initialization more than authGuard behavior');
+      // Simulate a page reload scenario where token is already in localStorage
+      // This tests that the guard waits for token verification to complete
+      
+      // Setup: Put a valid token in localStorage (simulating it being there from a previous session)
+      const validToken = 'valid-stored-token-xyz';
+      localStorage.setItem('split-happens.auth.token', validToken);
+      
+      // Manually trigger verification (this is what happens on AuthService init)
+      const verifyPromise = authService.verifyCurrentSession();
+      
+      // Fulfill the verify request
+      const verifyReq = httpMock.expectOne(req => req.url.includes('/auth/verify'));
+      verifyReq.flush({ 
+        valid: true, 
+        user: { id: 1, name: 'Admin' } 
+      });
+      
+      // Wait for verification to complete
+      await verifyPromise;
+      
+      // Now run the guard - it should allow access because token was verified
+      const result = await TestBed.runInInjectionContext(
+        () => authGuard(mockRoute, mockState)
+      );
+      
+      expect(result).toBe(true);
+      expect(authService.isAuthenticated()).toBe(true);
+    });
+
+    it('should redirect when localStorage token is invalid on page load', async () => {
+      // First, ensure we're logged out
+      await authService.logout();
+      
+      // Simulate a page reload with an INVALID token in localStorage
+      const invalidToken = 'invalid-expired-token-abc';
+      localStorage.setItem('split-happens.auth.token', invalidToken);
+      
+      // Trigger token verification
+      const verifyPromise = authService.verifyCurrentSession({ silent: true });
+      
+      // Fulfill the verify request with failure (invalid token)
+      const verifyReq = httpMock.expectOne(req => req.url.includes('/auth/verify'));
+      verifyReq.flush({ error: 'Invalid token' }, { status: 401, statusText: 'Unauthorized' });
+      
+      // Wait for verification to complete
+      await verifyPromise;
+      
+      // Now run the guard - it should redirect because token was invalid
+      const result = await TestBed.runInInjectionContext(
+        () => authGuard(mockRoute, mockState)
+      );
+      
+      expect(result).toBeInstanceOf(UrlTree);
+      const urlTree = result as UrlTree;
+      expect(urlTree.toString()).toContain('/login');
+      expect(urlTree.queryParams['returnUrl']).toBe('/dashboard');
+      expect(authService.isAuthenticated()).toBe(false);
     });
   });
 });
