@@ -91,6 +91,52 @@ describe('errorInterceptor', () => {
       expect(authService.logout).toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalled();
     });
+
+    it('should only logout without redirect for auth/login with query params', async () => {
+      httpClient.post('/api/auth/login?returnUrl=/dashboard', { username: 'admin', password: 'wrong' }).subscribe({
+        error: () => { }
+      });
+
+      const req = httpMock.expectOne(r => r.url.includes('/api/auth/login'));
+      req.flush({ error: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(authService.logout).toHaveBeenCalled();
+      expect(router.navigate).not.toHaveBeenCalled();
+    });
+
+    it('should redirect for non-auth endpoints that contain auth in path', async () => {
+      httpClient.get('/api/myauth/login').subscribe({
+        error: () => { }
+      });
+
+      const req = httpMock.expectOne('/api/myauth/login');
+      req.flush({ error: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(authService.logout).toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+        queryParams: { message: 'Your session has expired. Please sign in again.' }
+      });
+    });
+
+    it('should redirect for non-auth endpoints that contain verify in path', async () => {
+      httpClient.get('/api/verify_auth/login').subscribe({
+        error: () => { }
+      });
+
+      const req = httpMock.expectOne('/api/verify_auth/login');
+      req.flush({ error: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(authService.logout).toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+        queryParams: { message: 'Your session has expired. Please sign in again.' }
+      });
+    });
   });
 
   describe('403 Forbidden handling', () => {

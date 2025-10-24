@@ -108,7 +108,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
  */
 function handleUnauthorized(authService: AuthService, router: Router, requestUrl: string): void {
   // Don't redirect if already on login page or trying to login
-  const isAuthEndpoint = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/verify');
+  // Use regex to precisely match auth endpoints (e.g., /api/auth/login or /api/auth/verify)
+  // This prevents false matches like /api/myauth/login or /api/verify_auth/login
+  const isAuthEndpoint = /\/auth\/(login|verify)($|\?)/.test(requestUrl);
   
   if (isAuthEndpoint) {
     // Just clear the session without redirect for auth endpoints
