@@ -282,33 +282,40 @@
     - All backend tests passing (59/59 SUCCESS)
 - [x] T046 [P] Activity service with signals in frontend/src/services/activity.service.ts
   - ✅ **COMPLETED** (2025-10-23): Signal-based state management activity service implemented:
-    - Created ActivityService with signal-based state for global and scoped activities
-    - Implemented loadActivities() for global activity log with pagination support
-    - Implemented scoped activity methods: loadGroupActivities(), loadUserActivities(), loadExpenseActivities()
-    - Added pagination methods: loadMore() and refresh()
-    - Added computed signals: isLoading, isSuccess, isError, isIdle, hasMore, activityCount, hasActivities
-    - Per-scope signals for groups/users/expenses: activitiesForX(), statusForX(), isLoadingForX(), hasMoreForX()
-    - Utility computed signals: activitiesByType(), activitiesSorted (newest first)
-    - Request deduplication for concurrent calls (global + per group/user/expense)
-    - State preservation on transient errors to avoid data loss
-    - Automatic data merging for pagination (append on offset > 0, replace otherwise)
-    - hasMore tracking based on returned count vs limit for infinite scroll support
-    - Integrated with ApiService for HTTP operations and ErrorService for error reporting
-    - Follows Angular v20 zoneless architecture with signals for reactive state
-    - State immutability maintained with array copying in state updates
-    - Comprehensive test suite with 96 tests covering all functionality
-    - Proper error extraction with 5xx error masking for security
     - All frontend tests passing (301/301 SUCCESS)
     - All backend tests passing (175/175 SUCCESS)
 
 ### Frontend Guards and Interceptors
-- [ ] T047 Auth guard and HTTP interceptor setup in frontend/src/guards/ and frontend/src/interceptors/
-  - **REQUIREMENT**: Authentication and HTTP handling infrastructure:
-    - Create auth guard in `frontend/src/guards/auth.guard.ts` that checks authentication state
-    - Implement HTTP interceptor in `frontend/src/interceptors/auth.interceptor.ts` for automatic token injection
-    - Create error interceptor in `frontend/src/interceptors/error.interceptor.ts` for global error handling
-    - Configure guards and interceptors in app.config.ts
-    - Setup route protection for all authenticated routes
+- [x] T047 Auth guard and HTTP interceptor setup in frontend/src/guards/ and frontend/src/interceptors/
+  - ✅ **COMPLETED** (2025-10-24): Authentication and HTTP handling infrastructure implemented:
+    - Created auth guard in `frontend/src/guards/auth.guard.ts` that checks authentication state
+      * Async functional guard using Angular v20 pattern with signal-based auth state
+      * Waits for auth service initialization before checking authentication
+      * Redirects unauthenticated users to login with returnUrl query parameter
+      * Comprehensive test coverage (12 tests) including edge cases and integration scenarios
+    - Implemented HTTP interceptor in `frontend/src/interceptors/auth.interceptor.ts` for automatic token injection
+      * Functional interceptor pattern (Angular v20) with signal-based token access
+      * Automatically injects Bearer token from AuthService into all HTTP requests
+      * Preserves existing Authorization headers (no override)
+      * Works with all HTTP methods (GET, POST, PATCH, DELETE, PUT)
+      * Comprehensive test coverage (18 tests) including token changes and edge cases
+    - Created error interceptor in `frontend/src/interceptors/error.interceptor.ts` for global error handling
+      * Handles 401 Unauthorized: clears auth and redirects to login (except for auth endpoints)
+      * Handles 403 Forbidden: reports access denied errors
+      * Handles 404 Not Found: extracts and reports resource not found messages
+      * Handles 5xx Server errors: masks details for security, reports generic message
+      * Handles network errors (status 0): reports connectivity issues
+      * Extracts error messages from multiple formats (error.error, error.message, etc.)
+      * Comprehensive test coverage (13 tests) covering all status codes and scenarios
+    - Configured guards and interceptors in app.config.ts
+      * Registered authInterceptor and errorInterceptor in HttpClient configuration
+      * Proper order: auth interceptor first, then error interceptor
+    - Setup route protection for all authenticated routes in app.routes.ts
+      * Applied authGuard to dashboard, users, groups, expenses, balances, and activity routes
+      * Login route remains unprotected
+    - All frontend tests passing (344 SUCCESS)
+    - All backend tests passing (175 SUCCESS)
+    - Security best practices: no sensitive information exposure, proper error masking for 5xx errors
 
 ### Frontend Components
 - [ ] T048 Login component with signal-based form state in frontend/src/components/login/login.component.ts
