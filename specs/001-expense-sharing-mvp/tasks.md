@@ -318,7 +318,30 @@
     - Security best practices: no sensitive information exposure, proper error masking for 5xx errors
 
 ### Frontend Components
-- [ ] T048 Login component with signal-based form state in frontend/src/components/login/login.component.ts
+- [x] T048 Login component with signal-based form state in frontend/src/components/login/login.component.ts
+  - ✅ **COMPLETED** (2025-10-25): Signal-based form state login component implemented:
+    - Created comprehensive LoginComponent with signal-based state management
+    - Integrated with AuthService for JWT-based authentication
+    - Added computed signals: isLoading (from AuthService.isBusy), errorMessage (from AuthService.errorSignal)
+    - Implemented form validation with username and password required fields
+    - Added loading state with disabled form controls during authentication
+    - Dynamic button text changes based on loading state ('Sign In' / 'Signing in...')
+    - Error display with styled error container for authentication failures
+    - returnUrl query parameter support for post-login navigation (defaults to '/dashboard')
+    - Material Design UI with responsive layout and proper styling
+    - Comprehensive test suite with 20 tests covering all functionality:
+      * Form initialization and validation (required fields)
+      * Successful login flow with navigation
+      * Failed login with error display
+      * Loading states and form control disabling
+      * returnUrl parameter handling
+      * UI elements rendering
+      * Full integration scenarios
+    - Follows Angular v20 zoneless architecture with signals
+    - Uses inject() pattern for dependency injection
+    - OnPush change detection strategy for optimal performance
+    - All frontend tests passing (375/375 SUCCESS)
+    - All backend tests passing (175/175 SUCCESS)
 - [ ] T049 User management component (list, create, delete) in frontend/src/components/users/users.component.ts
 - [ ] T050 Group management component (list, create, add/remove members) in frontend/src/components/groups/groups.component.ts
 - [ ] T051 Expense form component with signal-based state in frontend/src/components/expenses/expense-form.component.ts
